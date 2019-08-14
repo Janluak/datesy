@@ -7,12 +7,9 @@ def _csv_to_json(file, main_key_position, null_value, dialect):
     Parameters
     ----------
     file : str
-        file directory for converting
     main_key_position : int
     dialect : [str, None]
-
     null_value
-
 
     Returns
     -------
@@ -43,9 +40,24 @@ def _csv_to_json(file, main_key_position, null_value, dialect):
 
 
 def _json_to_csv(file, key_name, dialect, key_position, if_empty_value, order):
+    """
+
+    Parameters
+    ----------
+    file : str
+    key_name : str
+    dialect : str
+    key_position : int
+    if_empty_value
+    order : dict
+
+    Returns
+    -------
+
+    """
+
     from json import load
     from csv import writer
-    print(key_name)
     with open(file, "r") as f:
         logger.info("current file: {}".format(file.split("/")[-1]))
         f = load(f)
@@ -72,18 +84,12 @@ def _json_to_csv(file, key_name, dialect, key_position, if_empty_value, order):
             for order_no in sorted(list(order.keys())):
                 header.insert(order_no, order[order_no])
 
-    print("header:", header)
-    print(f)
-
     with open(file.replace("json", "csv"), "w") as fw:
         w = writer(fw, dialect=dialect if dialect else "unix")
-        print(header)
         w.writerow(header)
         header.remove(key_name)
         logger.info("filename: {}".format(f))
-        print(header)
         for element in f:
-            print(element)
             row = [f[element][key] if key in f[element] else if_empty_value for key in header]
             row.insert(key_position, element)
             logger.success(row)

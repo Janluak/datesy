@@ -90,6 +90,7 @@ def csv_to_json(path, direct_data_use=False, null_value="delete", main_key_posit
     from ._converting import _csv_to_json
     if kwargs:
         _register_csv_dialect(**kwargs)
+        # ToDo add support for builtin dialects
 
     # converting
     files, path = _start_threads(path, "csv", _csv_to_json, null_value=null_value, main_key_position=main_key_position,
@@ -166,6 +167,7 @@ def json_to_csv(path, key_name, order=None, direct_data_use=False, if_empty_valu
 
     if kwargs:
         _register_csv_dialect(**kwargs)
+        # ToDo add support for builtin dialects
 
     # converting
     files, path = _start_threads(path, "json", _json_to_csv,
