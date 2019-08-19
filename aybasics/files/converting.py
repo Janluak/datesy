@@ -62,14 +62,14 @@ def _start_threads(path, file_type, function, **kwargs):
 
 def _register_csv_dialect(**kwargs):
     import csv
-    from . import csv_dialect_options
+    csv_dialect_options = {i for i in set(dir(csv.Dialect)) if "__" not in i}
     if not all(key in csv_dialect_options for key in kwargs.keys()):
         raise KeyError("only these keys for csv dialect are allowed: {}".format(csv_dialect_options))
     csv.register_dialect("custom", **kwargs)
 
 
 def csv_to_json(path, direct_data_use=False, null_value="delete", main_key_position=0, header_line=0, **kwargs):
-    # ToDo add support for header in other row than 0: if int: use this row, if str: search for this word
+    # ToDo add support for finding header row automatically
     """
     Converts files from csv to json
 
