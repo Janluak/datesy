@@ -1,6 +1,34 @@
 from aybasics import logger
 
 
+# ToDo use load.py module for file loading
+# ToDo source writing parts to new module write
+
+def _dictionize(sub_dict):
+    from collections import OrderedDict
+    # ToDo catch #text of attribute and insert values correctly to general #text
+    normalized_dict = dict()
+    for key in sub_dict:
+        if isinstance(sub_dict[key], OrderedDict):
+            normalized_dict[key] = _dictionize(sub_dict[key])
+        elif isinstance(sub_dict[key], list):
+            normalized_dict[key] = list()
+            for element in sub_dict[key]:
+                if isinstance(element, (list, dict, set)):
+                    normalized_dict[key].append(_dictionize(element))
+                else:
+                    normalized_dict[key] = sub_dict[key]
+
+        else:
+            normalized_dict[key] = sub_dict[key]
+
+    return normalized_dict
+
+
+def _reduce_lists(sub_dict, list_for_reduction, manual_selection, depth_in_list=0):
+    raise NotImplemented
+
+
 def _csv_to_json(file, main_key_position, null_value, dialect):
     """
     Converts a single file from csv to json
@@ -94,3 +122,37 @@ def _json_to_csv(file, key_name, dialect, key_position, if_empty_value, order):
             row.insert(key_position, element)
             logger.success(row)
             w.writerow(row)
+
+
+def _xml_to_json(file, list_reduction, manual_selection):
+    from collections import OrderedDict
+    from json import dump
+
+    from xmltodict import parse
+    with open(file, "r") as f:
+        f = str(f.read())
+        basic_dict = dict(parse(f))
+    data = dict()
+    for key in basic_dict:
+        if isinstance(basic_dict[key], OrderedDict):
+            data[key] = _dictionize(basic_dict[key])
+        else:
+            data[key] = basic_dict[key]
+    print(data)
+
+    if list_reduction:
+        data = _reduce_lists(data, list_reduction, manual_selection)
+
+    for key in data:
+        print(data[key])
+        for key1 in data[key]:
+            try:
+                print(data[key][key1].keys())
+                print(data[key][key1])
+            except AttributeError:
+                for element in data[key][key1]:
+                    print(element)
+                pass
+
+    with open(file.replace("xml", "json"), 'w') as fp:
+        dump(data, fp)

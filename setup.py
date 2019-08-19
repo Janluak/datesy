@@ -28,6 +28,7 @@ setup(name='aybasics',
       install_requires=[
           "loguru",
           "numpy",
-          "pandas"
+          "pandas",
+          "xmltodict"
 
       ])

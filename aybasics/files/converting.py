@@ -105,20 +105,43 @@ def csv_to_json(path, direct_data_use=False, null_value="delete", main_key_posit
         return {key.replace(path, ""): value for key, value in data.items()}
 
 
-def xml_to_json(path):
+def xml_to_json(path, direct_data_use=False, list_reduction=False, manual_selection=False):
     """
 
     Parameters
     ----------
-    path
+    path : str
+        path of files or file
+    direct_data_use : bool
+        if data is supposed to be used directly after converting, the data is returned as a dictionary
+    list_reduction : {bool, list}
+        if multiple keys on same hierarchy level the function tries to reduce the lists by creating a virtual dictionary
+        key with unique values: key_of_list-unique_key_in_dicts_in_list
+        if a list is provided, this list is used for selecting the keys in the dictionaries. the list is level based,
+        so top-level keys need to be first, lowest level keys need to be last.
+    manual_selection : bool
+        if the selection of the leading keys for list reduction shall be picked by hand
+        no effect if list_reduction : False
+
 
     Returns
     -------
+    data : dict
+        dictionary containing the jsons
+
 
     """
-    files = _get_files(path, "xml")
+    from ._converting import _xml_to_json
 
-    return dict()
+    files, path = _start_threads(path, "xml", _xml_to_json, list_reduction=list_reduction, manual_selection=manual_selection)
+
+    # loading converted files
+    if direct_data_use:
+        from .load import load_json
+        data = load_json([file.replace("xml", "json") for file in files])
+        if len(data.keys()) == 1:
+            return list(data.values())[0]
+        return {key.replace(path, ""): value for key, value in data.items()}
 
 
 def xls_to_json(path):
