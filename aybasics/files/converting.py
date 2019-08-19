@@ -68,7 +68,8 @@ def _register_csv_dialect(**kwargs):
     csv.register_dialect("custom", **kwargs)
 
 
-def csv_to_json(path, direct_data_use=False, null_value="delete", main_key_position=0, **kwargs):
+def csv_to_json(path, direct_data_use=False, null_value="delete", main_key_position=0, header_line=0, **kwargs):
+    # ToDo add support for header in other row than 0: if int: use this row, if str: search for this word
     """
     Converts files from csv to json
 
@@ -82,6 +83,8 @@ def csv_to_json(path, direct_data_use=False, null_value="delete", main_key_posit
         the value to fill the key if no value in csv file. If "delete", key in json not being present
     main_key_position : int
         the position in csv file for the main key for this row
+    header_line : int
+        if the header is not in the first row, select row here. WARNING: all data above this line will not be parsed
     Returns
     -------
     data : dict
@@ -94,12 +97,12 @@ def csv_to_json(path, direct_data_use=False, null_value="delete", main_key_posit
 
     # converting
     files, path = _start_threads(path, "csv", _csv_to_json, null_value=null_value, main_key_position=main_key_position,
-                                 dialect="custom" if kwargs else None)
+                                 dialect="custom" if kwargs else None, header_line=header_line)
 
     # loading converted files
     if direct_data_use:
         from .load import load_json
-        data = load_json([file.replace("csv", "json") for file in files])
+        data = load_json([file.replace(".csv", ".json") for file in files])
         if len(data.keys()) == 1:
             return list(data.values())[0]
         return {key.replace(path, ""): value for key, value in data.items()}
@@ -220,15 +223,3 @@ def json_to_xlsx(path):
     files = _get_files(path, "json")
 
     return
-
-
-def csv3(path):
-    files = _get_files(path, "csv")
-    print(files)
-    t = _Convert(files[0], "csv")
-    print(t.run())
-
-
-def _csv3():
-    print("YIHAA")
-    return "AbCdEfG"
