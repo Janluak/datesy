@@ -181,7 +181,7 @@ def _xml_to_json(file, memory, save_to_file, list_reduction, manual_selection):
         write_json(file.replace(".xml", ".json"), data)
 
 
-def _json_to_xlsx(file, memory, save_to_file, main_key, sheet, data=False):
+def _json_to_xlsx(file, memory, save_to_file, main_key, sheets, data=False):
     if not data:
         from .load import load_json
         data = load_json(file)
@@ -194,7 +194,7 @@ def _json_to_xlsx(file, memory, save_to_file, main_key, sheet, data=False):
 
     if save_to_file:
         from aybasics import write_xlsx
-        write_xlsx(file.replace(".json", ".xlsx"), data_frame, sheet)
+        write_xlsx(file.replace(".json", ".xlsx"), data_frame, sheets)
 
 
 def _json_to_pandas_data_frame(data, main_key=None, inverse=False):
@@ -218,8 +218,9 @@ def _xlsx_to_csv(file, memory, save_to_file, main_key_position, null_value, head
 def _xlsx_to_json(file, memory, save_to_file, main_key_position, null_value, header_line, sheets):
     from .load import load_xls
     from pandas import notnull
-    data_frame = load_xls(file, sheets)
-
+    data_frame = load_xls(file, sheets, ret_single=True)    # ToDo support multiple sheets
+    # print("sheets:", sheets)
+    # print(data_frame["Tabelle1"])
     # select header_line
     if header_line == 0:
         header = list(data_frame.keys())
@@ -254,6 +255,23 @@ def _xlsx_to_json(file, memory, save_to_file, main_key_position, null_value, hea
             if not data[key][key2] and null_value == "delete":
                 del data[key][key2]
     data = {header[0]: data}
+
+    """
+    # ToDo support multiple sheets
+    data = dict()
+    for sheet in data_frame:
+        print(type(data_frame[sheet]))
+        print(data_frame[sheet])
+        data[sheet] = data_frame[sheet].where((notnull(data_frame)), exchange_key)
+
+        # delete null_values if null_value == "delete"
+        data[sheet] = data_frame[sheet].set_index(header[main_key_position]).T.to_dict()
+        for key in data[sheet].copy():
+            for key2 in data[sheet][key].copy():
+                if not data[sheet][key][key2] and null_value == "delete":
+                    del data[sheet][key][key2]
+        data[sheet] = {header[0]: data}
+        """
 
     if memory:
         memory[file] = data

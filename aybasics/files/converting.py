@@ -21,10 +21,39 @@ class _ConvertThread(threading.Thread):
         self.function(self.file, self.memory if self.memory else False, self.save_to_file, **self.kwargs)
 
 
+def _get_files(conversion, file_type):
+    """
+    Returns all files for concerting as a list.
+    If a single file is provided as path, returns single file in list
+     Parameters
+    ----------
+    conversion : object
+    file_type : str
+        the filename ending specifying the file type
+    Returns
+    -------
+    files : list
+        a list of all relative file directories
+    """
+    conversion._absolute_path = os.path.abspath(conversion.path)
+    if os.path.isdir(conversion.path):
+        conversion._absolute_path += "/"
+        conversion.files = [conversion.absolute_path + file for file in os.listdir(conversion.path) if
+                            file_type in file.split(".")[-1]]
+        if not conversion.files:
+            raise ValueError("No files with this Ending")
+        logger.info("Number of files: {}".format(len(conversion.files)))
+    else:
+        if file_type not in conversion.path.split(".")[-1]:
+            raise IOError("Wrong file_type! Expected {}, given {}".format(file_type, conversion.path.split(".")[-1]))
+        conversion.files = [conversion._absolute_path]
+    logger.info("Files for converting: {}".format([file.split("/")[-1] for file in conversion.files]))
+
+
 class _FileConversion:
     def __init__(self, path, file_type, function, save_to_file, **kwargs):
         self.path = path
-        self._get_files(file_type)
+        _get_files(self, file_type)
         self.threads = dict()
         self.lock = threading.Lock()
         self.lock.acquire()
@@ -36,34 +65,6 @@ class _FileConversion:
         for thread in self.threads:
             self.threads[thread].join()
         self.lock.release()
-
-    def _get_files(self, file_type):
-        """
-        Returns all files for concerting as a list.
-        If a single file is provided as path, returns single file in list
-         Parameters
-        ----------
-        file_type : str
-            the filename ending specifying the file type
-        Returns
-        -------
-        files : list
-            a list of all relative file directories
-        """
-        # ToDo get files in a class for direct allocation of results and opt for
-        self._absolute_path = os.path.abspath(self.path)
-        if os.path.isdir(self.path):
-            self._absolute_path += "/"
-            self.files = [self.absolute_path + file for file in os.listdir(self.path) if
-                          file_type in file.split(".")[-1]]
-            if not self.files:
-                raise ValueError("No files with this Ending")
-            logger.info("Number of files: {}".format(len(self.files)))
-        else:
-            if file_type not in self.path.split(".")[-1]:
-                raise IOError("Wrong file_type! Expected {}, given {}".format(file_type, self.path.split(".")[-1]))
-            self.files = [self._absolute_path]
-        logger.info("Files for converting: {}".format([file.split("/")[-1] for file in self.files]))
 
     @property
     def data(self):
@@ -243,7 +244,7 @@ def json_to_csv(path, main_key=None, order=None, save_to_file=False, if_empty_va
 dict_to_csv = json_to_csv
 
 
-def json_to_xlsx(path, main_key=None, save_to_file=True):
+def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None):
     # ToDo make multiple jsons be written in single excel file
     """
 
@@ -255,6 +256,8 @@ def json_to_xlsx(path, main_key=None, save_to_file=True):
         if data is supposed to be saved to file
     main_key : str
         if the json or dict does not have the main key as a single {main_key : dict} present, it needs to be specified
+    sheets : str
+        the name of the excel sheet to write in
 
     Returns
     -------
@@ -262,6 +265,6 @@ def json_to_xlsx(path, main_key=None, save_to_file=True):
     """
     from ._converting import _json_to_xlsx
     conversion = _FileConversion(path=path, file_type="json", function=_json_to_xlsx, main_key=main_key,
-                                 save_to_file=save_to_file)
+                                 save_to_file=save_to_file, sheets=sheets)
 
     return conversion.data

@@ -34,7 +34,7 @@ def load_csv(files, dialect=None):
         return data
 
 
-def load_xls(files, sheets=None):
+def load_xls(files, sheets=None, ret_single=False):
     from pandas import read_excel, ExcelFile
     data = dict()
     if not isinstance(files, list):
@@ -50,6 +50,8 @@ def load_xls(files, sheets=None):
                 sheets = [sheets]
             for sheet in sheets:
                 data[file][sheet] = read_excel(file, sheet_name=sheet)
+        if ret_single:  # ToDo get rid after supporting multiple sheets in _converting.py
+            data[file] = read_excel(file)
 
     try:
         [value] = data.values()
