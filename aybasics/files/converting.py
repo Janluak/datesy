@@ -198,7 +198,7 @@ xlsx_to_dict = xls_to_json
 xls_to_dict = xls_to_json
 
 
-def json_to_csv(path, key_name, order=None, save_to_file=False, if_empty_value=None, key_position=0, **kwargs):
+def json_to_csv(path, main_key_name, order=None, save_to_file=False, if_empty_value=None, main_key_position=0, **kwargs):
     # ToDo add support for inverse csv writing
     """
     Converts a dictionary or json to csv. The dictionary converts as dict[line_key][header_key]
@@ -206,7 +206,7 @@ def json_to_csv(path, key_name, order=None, save_to_file=False, if_empty_value=N
     ----------
     path : str
         path to json file or directory with json files
-    key_name : str
+    main_key_name : str
         the name of the json keys
     order : dict {int: [str, int, float]}
         for defining a specific order of the
@@ -214,7 +214,7 @@ def json_to_csv(path, key_name, order=None, save_to_file=False, if_empty_value=N
         if data is supposed to be saved to file
     if_empty_value
         the value to set when no data is available
-    key_position : int
+    main_key_position : int
         the position in csv of the json key
 
     Returns
@@ -232,8 +232,8 @@ def json_to_csv(path, key_name, order=None, save_to_file=False, if_empty_value=N
 
     # converting
     conversion = _FileConversion(path=path, file_type="json", function=_json_to_csv,
-                                 key_name=key_name, dialect="custom" if kwargs else None,
-                                 key_position=key_position, if_empty_value=if_empty_value if if_empty_value else "",
+                                 main_key_name=main_key_name, dialect="custom" if kwargs else None,
+                                 main_key_position=main_key_position, if_empty_value=if_empty_value if if_empty_value else "",
                                  order=order, save_to_file=save_to_file)
     return conversion.data
 

@@ -66,15 +66,16 @@ def _csv_to_json(file, memory, save_to_file, main_key_position, null_value, dial
     return data
 
 
-def _json_to_csv(file, memory, save_to_file, key_name, dialect, key_position, if_empty_value, order, data=False):
+def _json_to_csv(file, memory, save_to_file, main_key_name, dialect, main_key_position, if_empty_value, order,
+                 data=False):
     """
 
     Parameters
     ----------
     file : str
-    key_name : str
+    main_key_name : str
     dialect : [str, None]
-    key_position : int
+    main_key_position : int
     if_empty_value
     order : [dict, None]
     data : object
@@ -93,27 +94,33 @@ def _json_to_csv(file, memory, save_to_file, key_name, dialect, key_position, if
             header_keys.add(key)
     if not order:
         header = list(header_keys)
-        header.insert(key_position, key_name)   # put the json_key to position in csv
+        header.insert(main_key_position, main_key_name)  # put the json_key to position in csv
     else:
         # order keys need to be int
         if not all(isinstance(order_no, int) for order_no in order.keys()):
             raise ValueError("all keys of order dictionary need to be of type int")
 
         #
+        if main_key_position in order.keys() and main_key_name != order[main_key_position]:
+            raise KeyError(
+                "The main_key_position '{}' is used by another key ('{}') "
+                "in the order dict!".format(main_key_position, order[main_key_position]))
+        if main_key_name not in order.values():
+            order[main_key_position] = main_key_name
         placed_keys = set(order.values())
-        placed_keys.add(key_name)
-        order[key_position] = key_name
+        placed_keys.add(main_key_name)
+        order[main_key_position] = main_key_name
         header = list(header_keys - placed_keys)
         for order_no in sorted(list(order.keys())):
             header.insert(order_no, order[order_no])
 
     header_without_ordered_keys = header.copy()
-    header_without_ordered_keys.remove(key_name)
+    header_without_ordered_keys.remove(main_key_name)
     rows = [header]
 
     for element in data:
         row = [data[element][key] if key in data[element] else if_empty_value for key in header_without_ordered_keys]
-        row.insert(key_position, element)
+        row.insert(main_key_position, element)
         rows.append(row)
     if memory:
         memory[file] = rows

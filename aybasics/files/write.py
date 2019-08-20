@@ -14,7 +14,7 @@ def write_csv_from_dict(file, data, key_name, order=None, if_empty_value=None, k
         from .converting import _register_csv_dialect
         _register_csv_dialect(**kwargs)
 
-    _json_to_csv(file=file, key_name=key_name, key_position=key_position, if_empty_value=if_empty_value, order=order,
+    _json_to_csv(file=file, main_key_name=key_name, main_key_position=key_position, if_empty_value=if_empty_value, order=order,
                  data=data, dialect="custom" if kwargs else None)
 
 
