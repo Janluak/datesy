@@ -161,7 +161,7 @@ def xml_to_json(path, save_to_file=False, list_reduction=False, manual_selection
     return conversion.data
 
 
-def xls_to_json(path, save_to_file):
+def xls_to_json(path, save_to_file=False, main_key_position=0, null_value="delete", header_line=0, sheets=None):
     """
     Converts Microsoft Excel xls or xlsx files to json
 
@@ -171,17 +171,31 @@ def xls_to_json(path, save_to_file):
         path to json file or directory with json files
     save_to_file : bool
         if data is supposed to be saved to file
+    null_value
+        the value to fill the key if no value in csv file. If "delete", key in json not being present
+    main_key_position : int
+        the position in csv file for the main key for this row
+     header_line : int
+        if the header is not in the first row, select row here. WARNING: all data above this line will not be parsed
+    sheets : [str, list, True]
+        supported only for single files
+        the name of the sheets to be parsed either (if only one sheet) as single string,
+        list of strings or True for all sheets
     Returns
     -------
 
     """
     from ._converting import _xlsx_to_json
-    conversion = _FileConversion(path=path, file_type="xls", function=_xlsx_to_json, save_to_file=save_to_file)
+    conversion = _FileConversion(path=path, file_type="xls", function=_xlsx_to_json, save_to_file=save_to_file,
+                                 main_key_position=main_key_position, null_value=null_value, header_line=header_line,
+                                 sheets=sheets)
 
     return conversion.data
 
 
 xlsx_to_json = xls_to_json
+xlsx_to_dict = xls_to_json
+xls_to_dict = xls_to_json
 
 
 def json_to_csv(path, key_name, order=None, save_to_file=False, if_empty_value=None, key_position=0, **kwargs):
@@ -227,7 +241,7 @@ def json_to_csv(path, key_name, order=None, save_to_file=False, if_empty_value=N
 dict_to_csv = json_to_csv
 
 
-def json_to_xlsx(path, save_to_file):
+def json_to_xlsx(path, save_to_file=True):
     """
 
     Parameters

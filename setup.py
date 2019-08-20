@@ -29,6 +29,7 @@ setup(name='aybasics',
           "loguru",
           "numpy",
           "pandas",
-          "xmltodict"
+          "xmltodict",
+          "xlrd"
 
       ])

@@ -88,13 +88,9 @@ def _json_to_csv(file, memory, save_to_file, key_name, dialect, key_position, if
         data = load_json(file)
         logger.info("current file: {}".format(file.split("/")[-1]))
     header_keys = set()
-    print(data)
     for element in data:
-        print(element)
         for key in data[element].keys():
-            print(key)
             header_keys.add(key)
-    print("header:", header_keys)
     if not order:
         header = list(header_keys)
         header.insert(key_position, key_name)   # put the json_key to position in csv
@@ -119,7 +115,6 @@ def _json_to_csv(file, memory, save_to_file, key_name, dialect, key_position, if
         row = [data[element][key] if key in data[element] else if_empty_value for key in header_without_ordered_keys]
         row.insert(key_position, element)
         rows.append(row)
-    print(rows)
     if memory:
         memory[file] = rows
     if save_to_file:
@@ -168,5 +163,55 @@ def _json_to_xlsx(file, memory, save_to_file):
     raise NotImplemented
 
 
-def _xlsx_to_json(file, memory, save_to_file):
+def _xlsx_to_csv(file, memory, save_to_file, main_key_position, null_value, header_line, sheets):
     raise NotImplemented
+
+
+def _xlsx_to_json(file, memory, save_to_file, main_key_position, null_value, header_line, sheets):
+    from .load import load_xls
+    from pandas import notnull
+    data_frame = load_xls(file, sheets)
+
+    # select header_line
+    if header_line == 0:
+        header = list(data_frame.keys())
+    else:
+        raise NotImplemented
+    """
+    # select header_line
+    if header_line == 0:
+        logger.warning("header_line = 0")
+        header = list(data_frame.keys())
+    else:
+        header = data_frame.iloc[header_line - 1:header_line]
+        line_no = 0
+        for row in data_frame.itertuples():
+            line_no += 1
+            if line_no == header_line:
+                header = row[1:]
+    data_frame = data_frame[header_line + 1:]
+    """
+
+    # set null_values
+    if null_value == "delete":
+        exchange_key = None
+    else:
+        exchange_key = null_value
+    data_frame = data_frame.where((notnull(data_frame)), exchange_key)
+
+    # delete null_values if null_value == "delete"
+    data = data_frame.set_index(header[main_key_position]).T.to_dict()
+    for key in data.copy():
+        for key2 in data[key].copy():
+            if not data[key][key2] and null_value == "delete":
+                del data[key][key2]
+    data = {header[0]: data}
+
+    if memory:
+        memory[file] = data
+
+    if save_to_file:
+        from .write import write_json
+        write_json(file.replace(".xlsx" if ".xlsx" in file else ".xls", ".json"), data)
+    logger.info("{} rows: {}".format(file.split("/")[-1], data_frame[header[0]].count() + 1))
+    return data

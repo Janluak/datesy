@@ -31,3 +31,26 @@ def load_csv(files, dialect=None):
         return value
     except ValueError:
         return data
+
+
+def load_xls(files, sheets):
+    from pandas import read_excel
+    data = dict()
+    if not isinstance(files, list):
+        if sheets:
+            data[files] = dict()
+            if not isinstance(sheets, list):
+                sheets = [sheets]
+            for sheet in sheets:
+                data[files][sheet] = read_excel(files, sheet_name=sheet)
+        else:
+            data[files] = read_excel(files)
+    else:
+        for file in files:
+            data[file] = read_excel(file)
+
+    try:
+        [value] = data.values()
+        return value
+    except ValueError:
+        return data
