@@ -26,6 +26,18 @@ def _reduce_lists(sub_dict, list_for_reduction, manual_selection, depth_in_list=
     raise NotImplemented
 
 
+def _cast_main_key(data):
+    if isinstance(data, dict):
+        if len(data.keys()) == 1:
+            main_key = list(data.keys())[0]
+            data = list(data.values())[0]
+            return data, main_key
+        raise ValueError("Dict has more than one key. "
+                         "Please provide either the main_key for dicts with more than one entry or "
+                         "provide dict with only one key")
+    raise TypeError("Expected type dict, got {}".format(type(data)))
+
+
 def _csv_to_json(file, memory, save_to_file, main_key_position, null_value, dialect, header_line):
     """
     Converts a single file from csv to json
@@ -66,14 +78,14 @@ def _csv_to_json(file, memory, save_to_file, main_key_position, null_value, dial
     return data
 
 
-def _json_to_csv(file, memory, save_to_file, main_key_name, dialect, main_key_position, if_empty_value, order,
+def _json_to_csv(file, memory, save_to_file, dialect, main_key_position, if_empty_value, order, main_key=None,
                  data=False):
     """
 
     Parameters
     ----------
     file : str
-    main_key_name : str
+    main_key : str
     dialect : [str, None]
     main_key_position : int
     if_empty_value
@@ -88,34 +100,37 @@ def _json_to_csv(file, memory, save_to_file, main_key_name, dialect, main_key_po
         from .load import load_json
         data = load_json(file)
         logger.info("current file: {}".format(file.split("/")[-1]))
+    if not main_key:
+        data, main_key = _cast_main_key(data)
+
     header_keys = set()
     for element in data:
         for key in data[element].keys():
             header_keys.add(key)
     if not order:
         header = list(header_keys)
-        header.insert(main_key_position, main_key_name)  # put the json_key to position in csv
+        header.insert(main_key_position, main_key)  # put the json_key to position in csv
     else:
         # order keys need to be int
         if not all(isinstance(order_no, int) for order_no in order.keys()):
             raise ValueError("all keys of order dictionary need to be of type int")
 
         #
-        if main_key_position in order.keys() and main_key_name != order[main_key_position]:
+        if main_key_position in order.keys() and main_key != order[main_key_position]:
             raise KeyError(
                 "The main_key_position '{}' is used by another key ('{}') "
                 "in the order dict!".format(main_key_position, order[main_key_position]))
-        if main_key_name not in order.values():
-            order[main_key_position] = main_key_name
+        if main_key not in order.values():
+            order[main_key_position] = main_key
         placed_keys = set(order.values())
-        placed_keys.add(main_key_name)
-        order[main_key_position] = main_key_name
+        placed_keys.add(main_key)
+        order[main_key_position] = main_key
         header = list(header_keys - placed_keys)
         for order_no in sorted(list(order.keys())):
             header.insert(order_no, order[order_no])
 
     header_without_ordered_keys = header.copy()
-    header_without_ordered_keys.remove(main_key_name)
+    header_without_ordered_keys.remove(main_key)
     rows = [header]
 
     for element in data:
@@ -166,8 +181,34 @@ def _xml_to_json(file, memory, save_to_file, list_reduction, manual_selection):
         write_json(file.replace(".xml", ".json"), data)
 
 
-def _json_to_xlsx(file, memory, save_to_file):
-    raise NotImplemented
+def _json_to_xlsx(file, memory, save_to_file, main_key, sheet, data=False):
+    if not data:
+        from .load import load_json
+        data = load_json(file)
+        logger.info("current file: {}".format(file.split("/")[-1]))
+
+    data_frame = _json_to_pandas_data_frame(data, main_key)
+
+    if memory:
+        memory[file] = data_frame
+
+    if save_to_file:
+        from aybasics import write_xlsx
+        write_xlsx(file.replace(".json", ".xlsx"), data_frame, sheet)
+
+
+def _json_to_pandas_data_frame(data, main_key=None, inverse=False):
+    from pandas import DataFrame
+    if not main_key:
+        data, main_key = _cast_main_key(data)
+
+    if not inverse:
+        data_frame = DataFrame.from_dict(data, orient="index")
+    else:
+        data_frame = DataFrame.from_dict(data)
+    data_frame.index.name = main_key
+
+    return data_frame
 
 
 def _xlsx_to_csv(file, memory, save_to_file, main_key_position, null_value, header_line, sheets):

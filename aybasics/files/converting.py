@@ -198,7 +198,8 @@ xlsx_to_dict = xls_to_json
 xls_to_dict = xls_to_json
 
 
-def json_to_csv(path, main_key_name, order=None, save_to_file=False, if_empty_value=None, main_key_position=0, **kwargs):
+def json_to_csv(path, main_key=None, order=None, save_to_file=False, if_empty_value=None, main_key_position=0,
+                **kwargs):
     # ToDo add support for inverse csv writing
     """
     Converts a dictionary or json to csv. The dictionary converts as dict[line_key][header_key]
@@ -206,8 +207,8 @@ def json_to_csv(path, main_key_name, order=None, save_to_file=False, if_empty_va
     ----------
     path : str
         path to json file or directory with json files
-    main_key_name : str
-        the name of the json keys
+    main_key : str
+        if the json or dict does not have the main key as a single {main_key : dict} present, it needs to be specified
     order : dict {int: [str, int, float]}
         for defining a specific order of the
     save_to_file : bool
@@ -232,8 +233,9 @@ def json_to_csv(path, main_key_name, order=None, save_to_file=False, if_empty_va
 
     # converting
     conversion = _FileConversion(path=path, file_type="json", function=_json_to_csv,
-                                 main_key_name=main_key_name, dialect="custom" if kwargs else None,
-                                 main_key_position=main_key_position, if_empty_value=if_empty_value if if_empty_value else "",
+                                 main_key=main_key, dialect="custom" if kwargs else None,
+                                 main_key_position=main_key_position,
+                                 if_empty_value=if_empty_value if if_empty_value else "",
                                  order=order, save_to_file=save_to_file)
     return conversion.data
 
@@ -241,7 +243,8 @@ def json_to_csv(path, main_key_name, order=None, save_to_file=False, if_empty_va
 dict_to_csv = json_to_csv
 
 
-def json_to_xlsx(path, save_to_file=True):
+def json_to_xlsx(path, main_key=None, save_to_file=True):
+    # ToDo make multiple jsons be written in single excel file
     """
 
     Parameters
@@ -250,12 +253,15 @@ def json_to_xlsx(path, save_to_file=True):
         path to json file or directory with json files
     save_to_file : bool
         if data is supposed to be saved to file
+    main_key : str
+        if the json or dict does not have the main key as a single {main_key : dict} present, it needs to be specified
 
     Returns
     -------
 
     """
     from ._converting import _json_to_xlsx
-    conversion = _FileConversion(path=path, file_type="json", function=_json_to_xlsx, save_to_file=save_to_file)
+    conversion = _FileConversion(path=path, file_type="json", function=_json_to_xlsx, main_key=main_key,
+                                 save_to_file=save_to_file)
 
     return conversion.data

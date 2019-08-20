@@ -1,3 +1,4 @@
+from aybasics import logger
 
 
 def load_json(files):
@@ -33,21 +34,22 @@ def load_csv(files, dialect=None):
         return data
 
 
-def load_xls(files, sheets):
-    from pandas import read_excel
+def load_xls(files, sheets=None):
+    from pandas import read_excel, ExcelFile
     data = dict()
     if not isinstance(files, list):
-        if sheets:
-            data[files] = dict()
+        files = [files]
+    for file in files:
+        data[file] = dict()
+        excel_file = ExcelFile(file)
+        if not sheets:
+            for sheet in excel_file.sheet_names:
+                data[file][sheet] = read_excel(file, sheet_name=sheet)
+        else:
             if not isinstance(sheets, list):
                 sheets = [sheets]
             for sheet in sheets:
-                data[files][sheet] = read_excel(files, sheet_name=sheet)
-        else:
-            data[files] = read_excel(files)
-    else:
-        for file in files:
-            data[file] = read_excel(file)
+                data[file][sheet] = read_excel(file, sheet_name=sheet)
 
     try:
         [value] = data.values()

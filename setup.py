@@ -30,6 +30,7 @@ setup(name='aybasics',
           "numpy",
           "pandas",
           "xmltodict",
-          "xlrd"
+          "xlrd",
+          "openpyxl"
 
       ])
