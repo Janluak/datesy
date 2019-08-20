@@ -268,3 +268,9 @@ def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None):
                                  save_to_file=save_to_file, sheets=sheets)
 
     return conversion.data
+
+
+def dict_to_data_frame():
+    raise NotImplemented
+    # _json_to_pandas_data_frame
+    # ToDo check if needed
