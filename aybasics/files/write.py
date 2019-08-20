@@ -2,6 +2,7 @@ from aybasics import logger
 
 
 def write_json(file, data):
+    logger.info("saving to file: {}".format(file))
     from json import dump
     with open(file, 'w') as fp:
         dump(data, fp)
@@ -18,6 +19,7 @@ def write_csv_from_dict(file, data, key_name, order=None, if_empty_value=None, k
 
 
 def write_csv_from_rows(file, rows, dialect):
+    logger.info("saving to file: {}".format(file))
     from csv import writer
     with open(file.replace(".json", ".csv"), "w") as fw:
         w = writer(fw, dialect=dialect if dialect else "unix")

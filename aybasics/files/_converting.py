@@ -26,7 +26,7 @@ def _reduce_lists(sub_dict, list_for_reduction, manual_selection, depth_in_list=
     raise NotImplemented
 
 
-def _csv_to_json(file, main_key_position, null_value, dialect, header_line):
+def _csv_to_json(file, memory, save_to_file, main_key_position, null_value, dialect, header_line):
     """
     Converts a single file from csv to json
     Parameters
@@ -56,14 +56,17 @@ def _csv_to_json(file, main_key_position, null_value, dialect, header_line):
             data[row[main_key_position]] = {header[i]: row[i] if row[i] else null_value for i in range(len(header))
                                             if i != main_key_position}
         rows_no += 1
-
-    from .write import write_json
-    write_json(file.replace(".csv", ".json"), data)
+    data = {header[main_key_position]: data}
+    if memory:
+        memory[file] = data
+    if save_to_file:
+        from .write import write_json
+        write_json(file.replace(".csv", ".json"), data)
     logger.info("{} rows: {}".format(file.split("/")[-1], rows_no))
     return data
 
 
-def _json_to_csv(file, key_name, dialect, key_position, if_empty_value, order, data=False):
+def _json_to_csv(file, memory, save_to_file, key_name, dialect, key_position, if_empty_value, order, data=False):
     """
 
     Parameters
@@ -74,6 +77,7 @@ def _json_to_csv(file, key_name, dialect, key_position, if_empty_value, order, d
     key_position : int
     if_empty_value
     order : [dict, None]
+    data : object
 
     Returns
     -------
@@ -84,11 +88,13 @@ def _json_to_csv(file, key_name, dialect, key_position, if_empty_value, order, d
         data = load_json(file)
         logger.info("current file: {}".format(file.split("/")[-1]))
     header_keys = set()
-
+    print(data)
     for element in data:
+        print(element)
         for key in data[element].keys():
+            print(key)
             header_keys.add(key)
-
+    print("header:", header_keys)
     if not order:
         header = list(header_keys)
         header.insert(key_position, key_name)   # put the json_key to position in csv
@@ -113,13 +119,16 @@ def _json_to_csv(file, key_name, dialect, key_position, if_empty_value, order, d
         row = [data[element][key] if key in data[element] else if_empty_value for key in header_without_ordered_keys]
         row.insert(key_position, element)
         rows.append(row)
-
-    from .write import write_csv_from_rows
-    write_csv_from_rows(file, rows, dialect)
+    print(rows)
+    if memory:
+        memory[file] = rows
+    if save_to_file:
+        from .write import write_csv_from_rows
+        write_csv_from_rows(file, rows, dialect)
     return rows
 
 
-def _xml_to_json(file, list_reduction, manual_selection):
+def _xml_to_json(file, memory, save_to_file, list_reduction, manual_selection):
     from collections import OrderedDict
 
     from xmltodict import parse
@@ -132,21 +141,32 @@ def _xml_to_json(file, list_reduction, manual_selection):
             data[key] = _dictionize(basic_dict[key])
         else:
             data[key] = basic_dict[key]
-    print(data)
 
     if list_reduction:
         data = _reduce_lists(data, list_reduction, manual_selection)
 
-    for key in data:
-        print(data[key])
-        for key1 in data[key]:
-            try:
-                print(data[key][key1].keys())
-                print(data[key][key1])
-            except AttributeError:
-                for element in data[key][key1]:
-                    print(element)
-                pass
+    # for key in data:
+    #     print(data[key])
+    #     for key1 in data[key]:
+    #         try:
+    #             print(data[key][key1].keys())
+    #             print(data[key][key1])
+    #         except AttributeError:
+    #             for element in data[key][key1]:
+    #                 print(element)
+    #             pass
 
-    from .write import write_json
-    write_json(file.replace("xml", "json"), data)
+    if memory:
+        memory[file] = data
+
+    if save_to_file:
+        from .write import write_json
+        write_json(file.replace(".xml", ".json"), data)
+
+
+def _json_to_xlsx(file, memory, save_to_file):
+    raise NotImplemented
+
+
+def _xlsx_to_json(file, memory, save_to_file):
+    raise NotImplemented

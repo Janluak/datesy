@@ -4,6 +4,7 @@ from loguru import logger
 
 from aybasics.files.converting import *
 from aybasics.files.load import *
+from aybasics.files.converting import dict_to_csv, xlsx_to_json
 
 
 class IntWithIndex(int):

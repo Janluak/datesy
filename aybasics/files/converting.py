@@ -1,75 +1,99 @@
 import os
 import threading
 from aybasics import logger
-__all__ = ["csv_to_json", "xml_to_json", "xls_to_json", "json_to_csv", "json_to_xlsx"]
+
+__all__ = ["csv_to_json", "xml_to_json", "xls_to_json", "xlsx_to_json", "json_to_csv", "dict_to_csv", "json_to_xlsx"]
 
 
-class _Convert(threading.Thread):
-    def __init__(self, file, function, **kwargs):
+class _ConvertThread(threading.Thread):
+    def __init__(self, memory, file, save_to_file, function, **kwargs):
         threading.Thread.__init__(self)
         self.file = file
         self.function = function
         self.setName(file)
+        self.memory = memory
+        self.save_to_file = save_to_file
         self.kwargs = kwargs
         logger.info(self.kwargs)
         self.start()
 
     def run(self):
-        self.function(self.file, **self.kwargs)
+        self.function(self.file, self.memory if self.memory else False, self.save_to_file, **self.kwargs)
 
 
-def _get_files(path, file_type):
-    """
-    Returns all files for concerting as a list.
-    If a single file is provided as path, returns single file in list
-     Parameters
-    ----------
-    path : str
-        a path containing the files for conversion
-    file_type : str
-        the filename ending specifying the file type
-    Returns
-    -------
-    files : list
-        a list of all relative file directories
-    """
+class _FileConversion:
+    def __init__(self, path, file_type, function, save_to_file, **kwargs):
+        self.path = path
+        self._get_files(file_type)
+        self.threads = dict()
+        self.lock = threading.Lock()
+        self.lock.acquire()
+        self.__data = dict()
+        for file in self.files:
+            self.__data[file] = None
+            self.threads[file] = _ConvertThread(memory=self.__data, save_to_file=save_to_file, file=file,
+                                                function=function, **kwargs)
+        for thread in self.threads:
+            self.threads[thread].join()
+        self.lock.release()
 
-    absolute_path = os.path.abspath(path)
-    if os.path.isdir(path):
-        absolute_path += "/"
-        files = [absolute_path + file for file in os.listdir(path) if file_type in file.split(".")[-1]]
-        if not files:
-            raise ValueError("No files with this Ending")
-        logger.info("Number of files: {}".format(len(files)))
-    else:
-        if file_type not in path.split(".")[-1]:
-            raise IOError("Wrong file_type! Expected {}, given {}".format(file_type, path.split(".")[-1]))
-        files = [absolute_path]
-    logger.info("Files for converting: {}".format([file.split("/")[-1] for file in files]))
-    return files, absolute_path
+    def _get_files(self, file_type):
+        """
+        Returns all files for concerting as a list.
+        If a single file is provided as path, returns single file in list
+         Parameters
+        ----------
+        file_type : str
+            the filename ending specifying the file type
+        Returns
+        -------
+        files : list
+            a list of all relative file directories
+        """
+        # ToDo get files in a class for direct allocation of results and opt for
+        self._absolute_path = os.path.abspath(self.path)
+        if os.path.isdir(self.path):
+            self._absolute_path += "/"
+            self.files = [self.absolute_path + file for file in os.listdir(self.path) if
+                          file_type in file.split(".")[-1]]
+            if not self.files:
+                raise ValueError("No files with this Ending")
+            logger.info("Number of files: {}".format(len(self.files)))
+        else:
+            if file_type not in self.path.split(".")[-1]:
+                raise IOError("Wrong file_type! Expected {}, given {}".format(file_type, self.path.split(".")[-1]))
+            self.files = [self._absolute_path]
+        logger.info("Files for converting: {}".format([file.split("/")[-1] for file in self.files]))
 
+    @property
+    def data(self):
+        self.lock.acquire()
+        self.lock.release()
+        if len(self.__data.keys()) == 1:
+            return list(self.__data.values())[0]
+        return {key[len(key) - len(self.path):]: value for key, value in self.__data.items()}
 
-def _start_threads(path, file_type, function, **kwargs):
-    files, absolute_path = _get_files(path, file_type)
-    threads = dict()
-    for file in files:
-        # threads[file] = _Convert(file, inspect.stack()[1].function)
-        threads[file] = _Convert(file, function, **kwargs)
-    for thread in threads:
-        threads[thread].join()
-    return files, absolute_path
+    @property
+    def file_names(self):
+        return self.files
+
+    @property
+    def absolute_path(self):
+        return self._absolute_path
 
 
 def _register_csv_dialect(**kwargs):
     import csv
     csv_dialect_options = {i for i in set(dir(csv.Dialect)) if "__" not in i}
     if not all(key in csv_dialect_options for key in kwargs.keys()):
-        raise KeyError("only these keys for csv dialect are allowed: {}".format(csv_dialect_options))
+        raise KeyError("only these keys for csv dialect are allowed: {}\nGiven keys: {}".format(csv_dialect_options,
+                                                                                                kwargs.keys()))
     csv.register_dialect("custom", **kwargs)
 
 
-def csv_to_json(path, direct_data_use=False, null_value="delete", main_key_position=0, header_line=0, **kwargs):
+def csv_to_json(path, save_to_file=False, null_value="delete", main_key_position=0, header_line=0, **kwargs):
     # ToDo add support for finding header row automatically
+    # ToDo add support for inverse csv writing
     """
     Converts files from csv to json
 
@@ -77,8 +101,8 @@ def csv_to_json(path, direct_data_use=False, null_value="delete", main_key_posit
     ----------
     path : str
         path of files or file
-    direct_data_use : bool
-        if data is supposed to be used directly after converting, the data is returned as a dictionary
+    save_to_file : bool
+        if data is supposed to be saved to file
     null_value
         the value to fill the key if no value in csv file. If "delete", key in json not being present
     main_key_position : int
@@ -96,27 +120,22 @@ def csv_to_json(path, direct_data_use=False, null_value="delete", main_key_posit
         # ToDo add support for builtin dialects
 
     # converting
-    files, path = _start_threads(path, "csv", _csv_to_json, null_value=null_value, main_key_position=main_key_position,
-                                 dialect="custom" if kwargs else None, header_line=header_line)
+    conversion = _FileConversion(path, "csv", _csv_to_json, null_value=null_value, main_key_position=main_key_position,
+                                 dialect="custom" if kwargs else None, header_line=header_line,
+                                 save_to_file=save_to_file)
 
-    # loading converted files
-    if direct_data_use:
-        from .load import load_json
-        data = load_json([file.replace(".csv", ".json") for file in files])
-        if len(data.keys()) == 1:
-            return list(data.values())[0]
-        return {key.replace(path, ""): value for key, value in data.items()}
+    return conversion.data
 
 
-def xml_to_json(path, direct_data_use=False, list_reduction=False, manual_selection=False):
+def xml_to_json(path, save_to_file=False, list_reduction=False, manual_selection=False):
     """
 
     Parameters
     ----------
     path : str
         path of files or file
-    direct_data_use : bool
-        if data is supposed to be used directly after converting, the data is returned as a dictionary
+    save_to_file : bool
+        if data is supposed to be saved to file
     list_reduction : {bool, list}
         if multiple keys on same hierarchy level the function tries to reduce the lists by creating a virtual dictionary
         key with unique values: key_of_list-unique_key_in_dicts_in_list
@@ -136,37 +155,39 @@ def xml_to_json(path, direct_data_use=False, list_reduction=False, manual_select
     """
     from ._converting import _xml_to_json
 
-    files, path = _start_threads(path, "xml", _xml_to_json, list_reduction=list_reduction, manual_selection=manual_selection)
+    conversion = _FileConversion(path, "xml", _xml_to_json, list_reduction=list_reduction,
+                                 manual_selection=manual_selection, save_to_file=save_to_file)
 
-    # loading converted files
-    if direct_data_use:
-        from .load import load_json
-        data = load_json([file.replace("xml", "json") for file in files])
-        if len(data.keys()) == 1:
-            return list(data.values())[0]
-        return {key.replace(path, ""): value for key, value in data.items()}
+    return conversion.data
 
 
-def xls_to_json(path):
+def xls_to_json(path, save_to_file):
     """
     Converts Microsoft Excel xls or xlsx files to json
 
     Parameters
     ----------
-    path
-
+     path : str
+        path to json file or directory with json files
+    save_to_file : bool
+        if data is supposed to be saved to file
     Returns
     -------
 
     """
-    files = _get_files(path, "xls")
+    from ._converting import _xlsx_to_json
+    conversion = _FileConversion(path=path, file_type="xls", function=_xlsx_to_json, save_to_file=save_to_file)
 
-    return dict()
+    return conversion.data
 
 
-def json_to_csv(path, key_name, order=None, direct_data_use=False, if_empty_value=None, key_position=0, **kwargs):
+xlsx_to_json = xls_to_json
+
+
+def json_to_csv(path, key_name, order=None, save_to_file=False, if_empty_value=None, key_position=0, **kwargs):
+    # ToDo add support for inverse csv writing
     """
-
+    Converts a dictionary or json to csv. The dictionary converts as dict[line_key][header_key]
     Parameters
     ----------
     path : str
@@ -175,8 +196,8 @@ def json_to_csv(path, key_name, order=None, direct_data_use=False, if_empty_valu
         the name of the json keys
     order : dict {int: [str, int, float]}
         for defining a specific order of the
-    direct_data_use : bool
-        if the csv rows are wanted for immediate further use
+    save_to_file : bool
+        if data is supposed to be saved to file
     if_empty_value
         the value to set when no data is available
     key_position : int
@@ -196,30 +217,31 @@ def json_to_csv(path, key_name, order=None, direct_data_use=False, if_empty_valu
         # ToDo add support for builtin dialects
 
     # converting
-    files, path = _start_threads(path, "json", _json_to_csv,
+    conversion = _FileConversion(path=path, file_type="json", function=_json_to_csv,
                                  key_name=key_name, dialect="custom" if kwargs else None,
-                                 key_position=key_position, if_empty_value=if_empty_value, order=order)
-
-    # loading converted files
-    if direct_data_use:
-        from .load import load_csv
-        data = load_csv([file.replace("json", "csv") for file in files], dialect="custom" if kwargs else None)
-        if isinstance(data, list):
-            return list(data)
-        return {key.replace(path, ""): value for key, value in data.items()}
+                                 key_position=key_position, if_empty_value=if_empty_value if if_empty_value else "",
+                                 order=order, save_to_file=save_to_file)
+    return conversion.data
 
 
-def json_to_xlsx(path):
+dict_to_csv = json_to_csv
+
+
+def json_to_xlsx(path, save_to_file):
     """
 
     Parameters
     ----------
-    path
+     path : str
+        path to json file or directory with json files
+    save_to_file : bool
+        if data is supposed to be saved to file
 
     Returns
     -------
 
     """
-    files = _get_files(path, "json")
+    from ._converting import _json_to_xlsx
+    conversion = _FileConversion(path=path, file_type="json", function=_json_to_xlsx, save_to_file=save_to_file)
 
-    return
+    return conversion.data
