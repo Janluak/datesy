@@ -6,6 +6,9 @@ __all__ = ["csv_to_json", "xml_to_json", "xls_to_json", "xlsx_to_json", "json_to
 
 
 class _ConvertThread(threading.Thread):
+    """
+    class for converting each given file in a thread and with specified conversion function
+    """
     def __init__(self, memory, file, save_to_file, function, **kwargs):
         threading.Thread.__init__(self)
         self.file = file
@@ -51,6 +54,9 @@ def _get_files(conversion, file_type):
 
 
 class _FileConversion:
+    """
+    class for handling the data of converted files as well as its access without threading problems
+    """
     def __init__(self, path, file_type, function, save_to_file, **kwargs):
         self.path = path
         _get_files(self, file_type)
@@ -68,6 +74,15 @@ class _FileConversion:
 
     @property
     def data(self):
+        """
+        returns the data after conversion was finished
+
+        Returns
+        -------
+        data : dict
+            converted data as {file_name: converted_data}
+
+        """
         self.lock.acquire()
         self.lock.release()
         if len(self.__data.keys()) == 1:
@@ -84,6 +99,17 @@ class _FileConversion:
 
 
 def _register_csv_dialect(**kwargs):
+    """
+    registers a csv dialect from kwargs with differences to main unix dialect
+    Parameters
+    ----------
+    kwargs
+        all parameters for changing from unix basic dialect
+
+    Returns
+    -------
+
+    """
     import csv
     csv_dialect_options = {i for i in set(dir(csv.Dialect)) if "__" not in i}
     if not all(key in csv_dialect_options for key in kwargs.keys()):
@@ -130,6 +156,7 @@ def csv_to_json(path, save_to_file=False, null_value="delete", main_key_position
 
 def xml_to_json(path, save_to_file=False, list_reduction=False, manual_selection=False):
     """
+    converts xml files to json/dict
 
     Parameters
     ----------
@@ -203,7 +230,8 @@ def json_to_csv(path, main_key=None, order=None, save_to_file=False, if_empty_va
                 **kwargs):
     # ToDo add support for inverse csv writing
     """
-    Converts a dictionary or json to csv. The dictionary converts as dict[line_key][header_key]
+    Converts a dictionary or json to csv. The dictionary converts as {main_key: dict[line_key][header_key][row_entry]}
+
     Parameters
     ----------
     path : str
@@ -247,6 +275,7 @@ dict_to_csv = json_to_csv
 def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None):
     # ToDo make multiple jsons be written in single excel file
     """
+    converts a json/dict to a xlsx
 
     Parameters
     ----------
