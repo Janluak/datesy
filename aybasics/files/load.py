@@ -49,7 +49,7 @@ def load_csv(files, **kwargs):
     """
     from csv import reader
     data = dict()
-    if kwargs:
+    if kwargs and "dialect" not in kwargs:
         from .converting import _register_csv_dialect
         _register_csv_dialect(**kwargs)
     if not isinstance(files, list):
@@ -57,7 +57,7 @@ def load_csv(files, **kwargs):
     for file in files:
         with open(file, "r") as f:
             data[file] = list()
-            rows = reader(f, dialect="custom" if kwargs else "unix")
+            rows = reader(f, dialect="custom" if kwargs and "dialect" not in kwargs else "unix")
             for row in rows:
                 data[file].append(row)
     try:

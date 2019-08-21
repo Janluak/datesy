@@ -146,7 +146,7 @@ def _json_to_csv(file, memory, save_to_file, dialect, main_key_position, if_empt
         memory[file] = rows
     if save_to_file:
         from .write import write_csv_from_rows
-        write_csv_from_rows(file, rows, dialect)
+        write_csv_from_rows(file, rows, dialect=dialect)
     return rows
 
 

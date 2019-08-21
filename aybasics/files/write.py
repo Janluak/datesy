@@ -77,11 +77,11 @@ def write_csv_from_rows(file: str, rows: list, **kwargs):
         file += ".csv"
     logger.info("saving to file: {}".format(file))
     from csv import writer
-    if kwargs:
+    if kwargs and "dialect" not in kwargs:
         from .converting import _register_csv_dialect
         _register_csv_dialect(**kwargs)
     with open(file.replace(".json", ".csv"), "w") as fw:
-        w = writer(fw,  dialect="custom" if kwargs else "unix")
+        w = writer(fw,  dialect="custom" if kwargs and "dialect" not in kwargs else "unix")
         logger.info("filename: {}".format(file))
         for row in rows:
             w.writerow(row)
