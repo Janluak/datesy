@@ -3,12 +3,10 @@ import sys
 from loguru import logger
 
 from aybasics.files.converting import *
-from aybasics.files._converting import _json_to_pandas_data_frame
 from aybasics.files.load import *
 from aybasics.files.write import *
 from aybasics.files.converting import dict_to_csv, xlsx_to_json, xls_to_json, xlsx_to_dict, xls_to_dict
-
-
+from aybasics.matching import match_similar
 
 
 def basic_log(log_level=5):
@@ -23,8 +21,3 @@ def basic_log(log_level=5):
 
 log = basic_log()
 
-
-# def my_max(array, return_arg=False):
-#     maximum = np.max(array)
-#     index = np.argmax(array)
-#     return IntWithIndex(maximum, index)

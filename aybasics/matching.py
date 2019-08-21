@@ -8,7 +8,7 @@ def similar(a, b):
 
 def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False, auto_match_all=True,
                   print_auto_match=False,
-                  distance_for_automatic_vs_manual_matching=0.1, similarity_limit_for_manual_checking=0.6):
+                  minimal_distance_for_automatic_matching=0.1, similarity_limit_for_manual_checking=0.6):
     """
     Returns a dictionary with list_a as keys and list_b as values based on most similarity.
     Matching twice to the same value is possible!
@@ -28,7 +28,7 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
         True if the most similar match shall just be used for matching, False if human wants to recheck
     print_auto_match : bool
         Especially for human rechecking: printing the automatically matched cases
-    distance_for_automatic_vs_manual_matching : float
+    minimal_distance_for_automatic_matching : float
         If there is a vast difference between the most and second most matching value, automatically matching is provided
         This parameter provides the similarity distance to be reached for automatically matching
     similarity_limit_for_manual_checking : float
@@ -104,10 +104,14 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
     # automatic matching all #
     if auto_match_all:
         for entry_a in list_for_matching:
-            match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
-            if print_auto_match:
-                print("automatically matched: {} - {}".format(entry_a,
-                                                              most_similar[entry_a][ordered_most_similar[entry_a][0]]))
+            try:
+                match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                if print_auto_match:
+                    print("automatically matched: {} - {}".format(entry_a,
+                                                                  most_similar[entry_a][
+                                                                      ordered_most_similar[entry_a][0]]))
+            except IndexError:
+                pass
         no_match = set(list_for_matching).difference(set(match))
 
     # human interfering matching #
@@ -120,10 +124,10 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
             else:
                 try:
                     if (len(ordered_most_similar[entry_a]) == 1 and ordered_most_similar[entry_a][0] >
-                        (1 - distance_for_automatic_vs_manual_matching)) \
+                        (1 - minimal_distance_for_automatic_matching)) \
                             or (len(ordered_most_similar[entry_a]) > 1 and
                                 (ordered_most_similar[entry_a][0] - ordered_most_similar[entry_a][1])
-                                > distance_for_automatic_vs_manual_matching):
+                                > minimal_distance_for_automatic_matching):
 
                         if print_auto_match:
                             print("automatically matched: {} - {}".format(entry_a, most_similar[entry_a][
@@ -146,8 +150,9 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
                     if max_number_to_show > int(window_width / minimal_string):
                         max_number_to_show = int(window_width / minimal_string)
 
+                    # ToDo fix minimal length of strings (match_order and percentage are longer than strings)
                     print("".join(["{}{}:  {:2.1f}% |".format("".join([" " for i in range(largest_string - 8)]), n,
-                                                              round(ordered_most_similar[entry_a][n], 3)*100)
+                                                              round(ordered_most_similar[entry_a][n], 3) * 100)
                                    for n in range(len(ordered_most_similar[entry_a][:max_number_to_show]))]))
 
                     number_to_show = max_number_to_show if max_number_to_show < len(ordered_most_similar[entry_a]) \
@@ -208,7 +213,8 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
 
             if entry_a not in match:
                 no_match.append(entry_a)
-                print('no similarity for "{}" above {}% similarity'.format(entry_a, similarity_limit_for_manual_checking))
+                print('no similarity for "{}" above {}% similarity'.format(entry_a,
+                                                                           similarity_limit_for_manual_checking * 100))
 
     # translating back to the original values #
     if simplify_with:
