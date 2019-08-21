@@ -1,4 +1,5 @@
 __author__ = "Jan Lukas Braje"
+__copyright__ = "Copyright (C) 2019 Jan Lukas Braje, janlukas.braje@opitz-consulting.com / git@braje.org"
 import sys
 from loguru import logger
 
