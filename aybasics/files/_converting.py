@@ -104,9 +104,14 @@ def _json_to_csv(file, memory, save_to_file, dialect, main_key_position, if_empt
         data, main_key = _cast_main_key(data)
 
     header_keys = set()
-    for element in data:
-        for key in data[element].keys():
-            header_keys.add(key)
+    try:
+        for element in data:
+            for key in data[element].keys():
+                header_keys.add(key)
+    except AttributeError:
+        raise ValueError("JSON/dictionary is not formatted suitable for neat csv conversion. "
+                         "{main_key: {key: {value_key: value}}} expected")
+        # ToDo get same result as pandas DataFrame.from_dict()
     if not order:
         header = list(header_keys)
         header.insert(main_key_position, main_key)  # put the json_key to position in csv
