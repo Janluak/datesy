@@ -1,6 +1,6 @@
 import os
 import threading
-from aybasics import logger
+from aybasics.logger import logger
 
 __all__ = ["csv_to_json", "xml_to_json", "xls_to_json", "xlsx_to_json", "json_to_csv", "dict_to_csv", "json_to_xlsx"]
 

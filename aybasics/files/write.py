@@ -1,4 +1,4 @@
-from aybasics import logger
+from aybasics.logger import logger
 from aybasics.files._converting import _cast_main_key
 
 

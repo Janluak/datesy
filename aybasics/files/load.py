@@ -1,4 +1,4 @@
-from aybasics import logger
+from aybasics.logger import logger
 
 
 def load_json(files):
