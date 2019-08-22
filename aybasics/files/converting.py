@@ -24,14 +24,14 @@ class _ConvertThread(threading.Thread):
         self.function(self.file, self.memory if self.memory else False, self.save_to_file, **self.kwargs)
 
 
-def _get_files(conversion, file_type):
+def _get_files(conversion, file_type, ignore_file_type):
     """
     Returns all files for concerting as a list.
     If a single file is provided as path, returns single file in list
      Parameters
     ----------
     conversion : object
-    file_type : str
+    file_type : [str, list]
         the filename ending specifying the file type
     Returns
     -------
@@ -47,7 +47,7 @@ def _get_files(conversion, file_type):
             raise ValueError("No files with this Ending")
         logger.info("Number of files: {}".format(len(conversion.files)))
     else:
-        if file_type not in conversion.path.split(".")[-1]:
+        if file_type not in conversion.path.split(".")[-1] and not ignore_file_type:
             raise IOError("Wrong file_type! Expected {}, given {}".format(file_type, conversion.path.split(".")[-1]))
         conversion.files = [conversion._absolute_path]
     logger.info("Files for converting: {}".format([file.split("/")[-1] for file in conversion.files]))
@@ -57,9 +57,9 @@ class _FileConversion:
     """
     class for handling the data of converted files as well as its access without threading problems
     """
-    def __init__(self, path, file_type, function, save_to_file, **kwargs):
+    def __init__(self, path, file_type, function, save_to_file, ignore_file_type, **kwargs):
         self.path = path
-        _get_files(self, file_type)
+        _get_files(self, file_type, ignore_file_type)
         self.threads = dict()
         self.lock = threading.Lock()
         self.lock.acquire()
@@ -118,7 +118,7 @@ def _register_csv_dialect(**kwargs):
     csv.register_dialect("custom", **kwargs)
 
 
-def csv_to_json(path, save_to_file=False, null_value="delete", main_key_position=0, header_line=0, **kwargs):
+def csv_to_json(path, save_to_file=False, null_value="delete", main_key_position=0, header_line=0, ignore_file_type=False, **kwargs):
     # ToDo add support for finding header row automatically
     # ToDo add support for inverse csv writing
     """
@@ -136,6 +136,8 @@ def csv_to_json(path, save_to_file=False, null_value="delete", main_key_position
         the position in csv file for the main key for this row
     header_line : int
         if the header is not in the first row, select row here. WARNING: all data above this line will not be parsed
+    ignore_file_type : bool
+        if the checking for the file_type shall be dismissed
     Returns
     -------
     data : dict
@@ -149,12 +151,12 @@ def csv_to_json(path, save_to_file=False, null_value="delete", main_key_position
     # converting
     conversion = _FileConversion(path, "csv", _csv_to_json, null_value=null_value, main_key_position=main_key_position,
                                  dialect="custom" if kwargs else None, header_line=header_line,
-                                 save_to_file=save_to_file)
+                                 save_to_file=save_to_file, ignore_file_type=ignore_file_type)
 
     return conversion.data
 
 
-def xml_to_json(path, save_to_file=False, list_reduction=False, manual_selection=False):
+def xml_to_json(path, save_to_file=False, list_reduction=False, manual_selection=False, ignore_file_type=False):
     """
     converts xml files to json/dict
 
@@ -172,7 +174,8 @@ def xml_to_json(path, save_to_file=False, list_reduction=False, manual_selection
     manual_selection : bool
         if the selection of the leading keys for list reduction shall be picked by hand
         no effect if list_reduction : False
-
+    ignore_file_type : bool
+        if the checking for the file_type shall be dismissed
 
     Returns
     -------
@@ -184,12 +187,12 @@ def xml_to_json(path, save_to_file=False, list_reduction=False, manual_selection
     from ._converting import _xml_to_json
 
     conversion = _FileConversion(path, "xml", _xml_to_json, list_reduction=list_reduction,
-                                 manual_selection=manual_selection, save_to_file=save_to_file)
+                                 manual_selection=manual_selection, save_to_file=save_to_file, ignore_file_type=ignore_file_type)
 
     return conversion.data
 
 
-def xls_to_json(path, save_to_file=False, main_key_position=0, null_value="delete", header_line=0, sheets=None):
+def xls_to_json(path, save_to_file=False, main_key_position=0, null_value="delete", header_line=0, sheets=None, ignore_file_type=False):
     """
     Converts Microsoft Excel xls or xlsx files to json
 
@@ -209,6 +212,8 @@ def xls_to_json(path, save_to_file=False, main_key_position=0, null_value="delet
         supported only for single files
         the name of the sheets to be parsed either (if only one sheet) as single string,
         list of strings or True for all sheets
+    ignore_file_type : bool
+        if the checking for the file_type shall be dismissed
     Returns
     -------
 
@@ -216,7 +221,7 @@ def xls_to_json(path, save_to_file=False, main_key_position=0, null_value="delet
     from ._converting import _xlsx_to_json
     conversion = _FileConversion(path=path, file_type="xls", function=_xlsx_to_json, save_to_file=save_to_file,
                                  main_key_position=main_key_position, null_value=null_value, header_line=header_line,
-                                 sheets=sheets)
+                                 sheets=sheets, ignore_file_type=ignore_file_type)
 
     return conversion.data
 
@@ -227,7 +232,7 @@ xls_to_dict = xls_to_json
 
 
 def json_to_csv(path, main_key=None, order=None, save_to_file=False, if_empty_value=None, main_key_position=0,
-                **kwargs):
+                ignore_file_type=False, **kwargs):
     # ToDo add support for inverse csv writing
     """
     Converts a dictionary or json to csv. The dictionary converts as {main_key: dict[line_key][header_key][row_entry]}
@@ -246,6 +251,8 @@ def json_to_csv(path, main_key=None, order=None, save_to_file=False, if_empty_va
         the value to set when no data is available
     main_key_position : int
         the position in csv of the json key
+    ignore_file_type : bool
+        if the checking for the file_type shall be dismissed
 
     Returns
     -------
@@ -265,14 +272,14 @@ def json_to_csv(path, main_key=None, order=None, save_to_file=False, if_empty_va
                                  main_key=main_key, dialect="custom" if kwargs else None,
                                  main_key_position=main_key_position,
                                  if_empty_value=if_empty_value if if_empty_value else "",
-                                 order=order, save_to_file=save_to_file)
+                                 order=order, save_to_file=save_to_file, ignore_file_type=ignore_file_type)
     return conversion.data
 
 
 dict_to_csv = json_to_csv
 
 
-def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None):
+def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None, ignore_file_type=False):
     # ToDo make multiple jsons be written in single excel file
     """
     converts a json/dict to a xlsx
@@ -287,6 +294,8 @@ def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None):
         if the json or dict does not have the main key as a single {main_key : dict} present, it needs to be specified
     sheets : str
         the name of the excel sheet to write in
+    ignore_file_type : bool
+        if the checking for the file_type shall be dismissed
 
     Returns
     -------
@@ -294,7 +303,7 @@ def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None):
     """
     from ._converting import _json_to_xlsx
     conversion = _FileConversion(path=path, file_type="json", function=_json_to_xlsx, main_key=main_key,
-                                 save_to_file=save_to_file, sheets=sheets)
+                                 save_to_file=save_to_file, sheets=sheets, ignore_file_type=ignore_file_type)
 
     return conversion.data
 
