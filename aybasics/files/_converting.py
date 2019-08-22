@@ -73,7 +73,7 @@ def _csv_to_json(file, memory, save_to_file, main_key_position, null_value, dial
         memory[file] = data
     if save_to_file:
         from .write import write_json
-        write_json(file.replace(".csv", ".json"), data)
+        write_json(file.split(".")[0] + ".json", data)
     logger.info("{} rows: {}".format(file.split("/")[-1], rows_no))
     return data
 
@@ -146,7 +146,7 @@ def _json_to_csv(file, memory, save_to_file, dialect, main_key_position, if_empt
         memory[file] = rows
     if save_to_file:
         from .write import write_csv_from_rows
-        write_csv_from_rows(file, rows, dialect=dialect)
+        write_csv_from_rows(file.split(".")[0] + ".csv", rows, dialect=dialect)
     return rows
 
 
@@ -183,7 +183,7 @@ def _xml_to_json(file, memory, save_to_file, list_reduction, manual_selection):
 
     if save_to_file:
         from .write import write_json
-        write_json(file.replace(".xml", ".json"), data)
+        write_json(file.split(".")[0] + ".json", data)
 
 
 def _json_to_xlsx(file, memory, save_to_file, main_key, sheets, data=False):
@@ -199,7 +199,7 @@ def _json_to_xlsx(file, memory, save_to_file, main_key, sheets, data=False):
 
     if save_to_file:
         from aybasics import write_xlsx
-        write_xlsx(file.replace(".json", ".xlsx"), data_frame, sheets)
+        write_xlsx(file.split(".")[0] + ".xlsx", data_frame, sheets)
 
 
 def _json_to_pandas_data_frame(data, main_key=None, inverse=False):
@@ -283,6 +283,6 @@ def _xlsx_to_json(file, memory, save_to_file, main_key_position, null_value, hea
 
     if save_to_file:
         from .write import write_json
-        write_json(file.replace(".xlsx" if ".xlsx" in file else ".xls", ".json"), data)
+        write_json(file.split(".")[0] + ".json", data)
     logger.info("{} rows: {}".format(file.split("/")[-1], data_frame[header[0]].count() + 1))
     return data
