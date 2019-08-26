@@ -37,12 +37,12 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
     Returns
     -------
     match : dict
-        {value_for_matching: value_to_be_mapped_to}
+        {index_value_for_matching: index_value_to_be_mapped_to}
     no_match : list
         A list of all values that could not be matched
 
     """
-    # ToDo limit to single match (with dicts from most matches from to_be_matched_to)
+    # ToDo catch multiple entries of same string
 
     # translating to simpler value names #
     if simplify_with:
@@ -50,20 +50,12 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
             separators = "".join(simplify_with)
         else:
             separators = '[_, | \n \' & " % \\ * -]'
-        dict_for_matching = dict()
-        dict_to_be_matched_to = dict()
         if simplify_with not in ["all", "separators"]:
-            dict_for_matching = {value.lower(): value for value in list_for_matching}
-            list_for_matching = [value.lower() for value in list_for_matching.copy()]
-            dict_to_be_matched_to = {value.lower(): value for value in list_to_be_matched_to}
-            list_to_be_matched_to = [value.lower() for value in list_to_be_matched_to.copy()]
+            list_for_matching = [element.lower() for element in list_for_matching.copy()]
+            list_to_be_matched_to = [element.lower() for element in list_to_be_matched_to.copy()]
         elif simplify_with != "capital":
-            for entry_a in list_for_matching:
-                dict_for_matching["".join(re.split(separators, entry_a))] = entry_a
-                list_for_matching = list(dict_for_matching.keys())
-            for entry_b in list_to_be_matched_to:
-                dict_to_be_matched_to["".join(re.split(separators, entry_b))] = entry_b
-                list_to_be_matched_to = list(dict_to_be_matched_to.keys())
+            list_for_matching = ["".join(re.split(separators, element)) for element in list_for_matching.copy()]
+            list_to_be_matched_to = ["".join(re.split(separators, element)) for element in list_to_be_matched_to.copy()]
 
     match = dict()
     no_match = list()
@@ -72,10 +64,16 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
     ordered_most_similar = dict()
     ordered_most_similar_reverse = dict()
 
+    list_for_matching_index_copy = list_for_matching.copy()
+    list_to_be_matched_to_index_copy = list_to_be_matched_to.copy()
+
     # if direct matches
     for entry_a in list_for_matching.copy():
         if entry_a in list_to_be_matched_to:
-            match[entry_a] = entry_a
+            try:
+                [match[list_for_matching_index_copy.index(entry_a)]] = [i for i, j in enumerate(list_to_be_matched_to_index_copy) if j == entry_a]
+            except ValueError:
+                match[list_for_matching_index_copy.index(entry_a)] = [i for i, j in enumerate(list_to_be_matched_to_index_copy) if j == entry_a]
             list_for_matching.remove(entry_a)
             list_to_be_matched_to.remove(entry_a)
 
@@ -103,9 +101,11 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
 
     # automatic matching all #
     if auto_match_all:
-        for entry_a in list_for_matching:
+        for entry_a in list_for_matching.copy():
             try:
-                match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                match[list_for_matching_index_copy.index(entry_a)] = list_to_be_matched_to_index_copy.index(most_similar[entry_a][ordered_most_similar[entry_a][0]])
+                list_for_matching.remove(entry_a)
+                list_to_be_matched_to.remove(most_similar[entry_a][ordered_most_similar[entry_a][0]])
                 if print_auto_match:
                     print("automatically matched: {} - {}".format(entry_a,
                                                                   most_similar[entry_a][
@@ -132,12 +132,12 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
                         if print_auto_match:
                             print("automatically matched: {} - {}".format(entry_a, most_similar[entry_a][
                                 ordered_most_similar[entry_a][0]]))
-                        match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                        match[list_for_matching_index_copy.index(entry_a)] = list_to_be_matched_to_index_copy.index(most_similar[entry_a][ordered_most_similar[entry_a][0]])
 
                 except IndexError:
                     pass
 
-                if entry_a not in match:
+                if list_for_matching_index_copy.index(entry_a) not in match:
                     try:
                         _, columns = os.popen('stty size', 'r').read().split()
                         window_width = int(columns)
@@ -149,39 +149,25 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
                     max_number_to_show = int(window_width / (largest_string + 3))
                     if max_number_to_show > int(window_width / minimal_string):
                         max_number_to_show = int(window_width / minimal_string)
+                    characters = largest_string if largest_string > minimal_string - 5 else minimal_string - 5
 
-                    # ToDo fix minimal length of strings (match_order and percentage are longer than strings)
                     print("".join(["{}{}:  {:2.1f}% |".format("".join([" " for i in range(largest_string - 8)]), n,
                                                               round(ordered_most_similar[entry_a][n], 3) * 100)
                                    for n in range(len(ordered_most_similar[entry_a][:max_number_to_show]))]))
 
                     number_to_show = max_number_to_show if max_number_to_show < len(ordered_most_similar[entry_a]) \
                         else len(ordered_most_similar[entry_a])
-                    print("".join([" {:>{}} |".format(entry_a, largest_string) for i in range(number_to_show)]))
+                    print("".join([" {:>{}} |".format(entry_a, characters) for i in range(number_to_show)]))
                     print("".join([" {:>{}} |".format(most_similar[entry_a][ordered_most_similar[entry_a][n]],
-                                                      largest_string) for n in range(number_to_show)]))
+                                                      characters) for n in range(number_to_show)]))
 
-                    """
-                    generator = (print("{}: {:1.3f} | {} - {}: fit? ".format(
-                        n,
-                        round(ordered_most_similar[entry_a][n], 3),
-                        entry_a,
-                        most_similar[entry_a][ordered_most_similar[entry_a][n]]))
-                        for n in range(len(ordered_most_similar[entry_a])))
-                    i = 0
-                    while i < 10:
-                        try:
-                            next(generator)
-                        except StopIteration:
-                            break
-                    """
                     answer = input("match? ")
                     if answer == "":
-                        match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                        match[list_for_matching_index_copy.index(entry_a)] = list_to_be_matched_to_index_copy.index(most_similar[entry_a][ordered_most_similar[entry_a][0]])
 
                     else:
                         try:
-                            match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][int(answer)]]
+                            match[list_for_matching_index_copy.index(entry_a)] = list_to_be_matched_to_index_copy.index(most_similar[entry_a][ordered_most_similar[entry_a][int(answer)]])
                         except ValueError:
                             try:
                                 generator = (print("{}: {:1.3f} | {} - {}: fit? ".
@@ -196,29 +182,18 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
                                 for _ in generator:
                                     result = input("match? ")
                                     if result == "":
-                                        match[entry_a] = most_similar[entry_a][
-                                            ordered_most_similar[entry_a][number_to_show]]
+                                        match[list_for_matching_index_copy.index(
+                                            entry_a)] = list_to_be_matched_to_index_copy.index(
+                                            most_similar[entry_a][ordered_most_similar[entry_a][number_to_show]])
                                         break
                                     else:
                                         number_to_show += 1
                             except IndexError:
                                 pass
 
-                            # for entry in ordered_most_similar[entry_a][9:]:
-                            #    result = input(
-                            #        "{} | {} - {}: fit? ".format(round(entry, 3), entry_a, most_similar[entry_a][entry]))
-                            #     if result == "":
-                            #        match[entry_a] = most_similar[entry_a][entry]
-                            #        break
-
-            if entry_a not in match:
+            if list_for_matching_index_copy.index(entry_a) not in match:
                 no_match.append(entry_a)
                 print('no similarity for "{}" above {}% similarity'.format(entry_a,
                                                                            similarity_limit_for_manual_checking * 100))
-
-    # translating back to the original values #
-    if simplify_with:
-        match = {dict_for_matching[key]: dict_to_be_matched_to[match[key]] for key in match.keys()}
-        no_match = [dict_for_matching[key] for key in no_match]
 
     return match, no_match
