@@ -64,6 +64,8 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
     ordered_most_similar = dict()
     ordered_most_similar_reverse = dict()
 
+    list_for_matching = list_for_matching.copy()
+    list_to_be_matched_to = list_to_be_matched_to.copy()
     list_for_matching_index_copy = list_for_matching.copy()
     list_to_be_matched_to_index_copy = list_to_be_matched_to.copy()
 
