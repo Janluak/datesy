@@ -44,7 +44,9 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
         A list of all values that could not be matched
 
     """
-    # ToDo catch multiple entries of same string
+    if len(set(list_for_matching)) != len(list_for_matching):
+        raise ValueError("multiple strings with same value! please provide unique set of strings!")
+
     if single_match_only:
         raise NotImplemented
 
