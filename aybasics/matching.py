@@ -81,7 +81,6 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
             except ValueError:
                 match[list_for_matching_index_copy.index(entry_a)] = [i for i, j in enumerate(list_to_be_matched_to_index_copy) if j == entry_a]
             list_for_matching.remove(entry_a)
-            list_to_be_matched_to.remove(entry_a)
 
     # creating the most similar entries #
     for entry_a in list_for_matching:
