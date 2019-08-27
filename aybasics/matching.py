@@ -1,5 +1,6 @@
 from difflib import SequenceMatcher
 import re, os
+from aybasics.logger import logger
 
 
 def similar(a, b):
@@ -126,7 +127,7 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
               " If none match, press 'n' and enter")
         for entry_a in list_for_matching:
             if not most_similar[entry_a]:
-                no_match.append(entry_a)
+                pass
             else:
                 try:
                     if (len(ordered_most_similar[entry_a]) == 1 and ordered_most_similar[entry_a][0] >
@@ -199,7 +200,7 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
 
             if list_for_matching_index_copy.index(entry_a) not in match:
                 no_match.append(entry_a)
-                print('no similarity for "{}" above {}% similarity'.format(entry_a,
+                logger.warning('no similarity for "{}" above {}% similarity'.format(entry_a,
                                                                            similarity_limit_for_manual_checking * 100))
 
     return match, no_match
