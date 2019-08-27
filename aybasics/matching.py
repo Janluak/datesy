@@ -7,7 +7,7 @@ def similar(a, b):
 
 
 def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False, auto_match_all=True,
-                  print_auto_match=False,
+                  print_auto_match=False, single_match_only=False,
                   minimal_distance_for_automatic_matching=0.1, similarity_limit_for_manual_checking=0.6):
     """
     Returns a dictionary with list_a as keys and list_b as values based on most similarity.
@@ -28,6 +28,8 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
         True if the most similar match shall just be used for matching, False if human wants to recheck
     print_auto_match : bool
         Especially for human rechecking: printing the automatically matched cases
+    single_match_only : bool
+        if each element of to_be_matched_to shall only be available one time
     minimal_distance_for_automatic_matching : float
         If there is a vast difference between the most and second most matching value, automatically matching is provided
         This parameter provides the similarity distance to be reached for automatically matching
@@ -43,6 +45,8 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
 
     """
     # ToDo catch multiple entries of same string
+    if single_match_only:
+        raise NotImplemented
 
     # translating to simpler value names #
     if simplify_with:
@@ -107,7 +111,6 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
             try:
                 match[list_for_matching_index_copy.index(entry_a)] = list_to_be_matched_to_index_copy.index(most_similar[entry_a][ordered_most_similar[entry_a][0]])
                 list_for_matching.remove(entry_a)
-                list_to_be_matched_to.remove(most_similar[entry_a][ordered_most_similar[entry_a][0]])
                 if print_auto_match:
                     print("automatically matched: {} - {}".format(entry_a,
                                                                   most_similar[entry_a][
