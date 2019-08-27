@@ -7,6 +7,15 @@ def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 
+def _check_for_unique_similarity(simi, value, dict_entry):
+    if simi in dict_entry:
+        if not isinstance(dict_entry[simi], list):
+            dict_entry[simi] = [dict_entry[simi]]
+        dict_entry[simi].append(value)
+    else:
+        dict_entry[simi] = value
+
+
 def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False, auto_match_all=True,
                   print_auto_match=False, single_match_only=True,
                   minimal_distance_for_automatic_matching=0.1, similarity_limit_for_manual_checking=0.6):
@@ -101,17 +110,12 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
 
             similarity = similar(entry_a, entry_b)
             if similarity > similarity_limit_for_manual_checking:
-                if similarity in most_similar[entry_a]:
-                    # ToDo create nicer way for handling multiple matches of same similarity
-                    while True:
-                        similarity *= 0.000000001
-                        if similarity not in most_similar[entry_a]:
-                            break
-                most_similar[entry_a][similarity] = entry_b
+
+                _check_for_unique_similarity(similarity, entry_b, most_similar[entry_a])
                 if entry_b not in most_similar_reverse:
                     most_similar_reverse[entry_b] = dict()
-                # ToDo catch same values of similarity
-                most_similar_reverse[entry_b][similarity] = entry_a
+
+                _check_for_unique_similarity(similarity,entry_b, most_similar_reverse[entry_b])
 
         ordered_most_similar[entry_a] = sorted(list(most_similar[entry_a].keys()))[::-1]
     for entry_b in most_similar_reverse:
@@ -123,6 +127,13 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
             try:
                 match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
                 list_for_matching.remove(entry_a)
+                if isinstance(most_similar[entry_a][ordered_most_similar[entry_a][0]], list):
+                    most_similar_list = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                    while most_similar_list:
+                        list_to_be_matched_to.remove(most_similar_list[0])
+                        most_similar_list = most_similar_list[1:]
+                else:
+                    list_to_be_matched_to.remove(most_similar[entry_a][ordered_most_similar[entry_a][0]])
                 if print_auto_match:
                     print("automatically matched: {} - {}".format(entry_a,
                                                                   most_similar[entry_a][
