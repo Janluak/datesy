@@ -3,7 +3,6 @@ from aybasics.logger import logger
 
 def _dictionize(sub_dict):
     from collections import OrderedDict
-    # ToDo catch #text of attribute and insert values correctly to general #text
     normalized_dict = dict()
     for key in sub_dict:
         if isinstance(sub_dict[key], OrderedDict):
@@ -111,7 +110,7 @@ def _json_to_csv(file, memory, save_to_file, dialect, main_key_position, if_empt
     except AttributeError:
         raise ValueError("JSON/dictionary is not formatted suitable for neat csv conversion. "
                          "{main_key: {key: {value_key: value}}} expected")
-        # ToDo get same result as pandas DataFrame.from_dict()
+
     if not order:
         header = list(header_keys)
         header.insert(main_key_position, main_key)  # put the json_key to position in csv
@@ -166,17 +165,6 @@ def _xml_to_json(file, memory, save_to_file, list_reduction, manual_selection):
 
     if list_reduction:
         data = _reduce_lists(data, list_reduction, manual_selection)
-
-    # for key in data:
-    #     print(data[key])
-    #     for key1 in data[key]:
-    #         try:
-    #             print(data[key][key1].keys())
-    #             print(data[key][key1])
-    #         except AttributeError:
-    #             for element in data[key][key1]:
-    #                 print(element)
-    #             pass
 
     if memory:
         memory[file] = data
@@ -236,28 +224,11 @@ def _xlsx_to_csv(file, memory, save_to_file, main_key_position, null_value, head
 def _xlsx_to_json(file, memory, save_to_file, main_key_position, null_value, header_line, sheets):
     from .load import load_xls
     from pandas import notnull
-    data_frame = load_xls(file, sheets, ret_single=True)    # ToDo support multiple sheets
-    # print("sheets:", sheets)
-    # print(data_frame["Tabelle1"])
-    # select header_line
+    data_frame = load_xls(file, sheets, ret_single=True)
     if header_line == 0:
         header = list(data_frame.keys())
     else:
         raise NotImplemented
-    """
-    # select header_line
-    if header_line == 0:
-        logger.warning("header_line = 0")
-        header = list(data_frame.keys())
-    else:
-        header = data_frame.iloc[header_line - 1:header_line]
-        line_no = 0
-        for row in data_frame.itertuples():
-            line_no += 1
-            if line_no == header_line:
-                header = row[1:]
-    data_frame = data_frame[header_line + 1:]
-    """
 
     # set null_values
     if null_value == "delete":
@@ -273,23 +244,6 @@ def _xlsx_to_json(file, memory, save_to_file, main_key_position, null_value, hea
             if not data[key][key2] and null_value == "delete":
                 del data[key][key2]
     data = {header[0]: data}
-
-    """
-    # ToDo support multiple sheets
-    data = dict()
-    for sheet in data_frame:
-        print(type(data_frame[sheet]))
-        print(data_frame[sheet])
-        data[sheet] = data_frame[sheet].where((notnull(data_frame)), exchange_key)
-
-        # delete null_values if null_value == "delete"
-        data[sheet] = data_frame[sheet].set_index(header[main_key_position]).T.to_dict()
-        for key in data[sheet].copy():
-            for key2 in data[sheet][key].copy():
-                if not data[sheet][key][key2] and null_value == "delete":
-                    del data[sheet][key][key2]
-        data[sheet] = {header[0]: data}
-        """
 
     if memory:
         memory[file] = data

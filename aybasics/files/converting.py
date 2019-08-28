@@ -119,8 +119,6 @@ def _register_csv_dialect(**kwargs):
 
 
 def csv_to_json(path, save_to_file=False, null_value="delete", main_key_position=0, header_line=0, ignore_file_type=False, **kwargs):
-    # ToDo add support for finding header row automatically
-    # ToDo add support for inverse csv writing
     """
     Converts files from csv to json
 
@@ -146,7 +144,6 @@ def csv_to_json(path, save_to_file=False, null_value="delete", main_key_position
     from ._converting import _csv_to_json
     if kwargs:
         _register_csv_dialect(**kwargs)
-        # ToDo add support for builtin dialects
 
     # converting
     conversion = _FileConversion(path, "csv", _csv_to_json, null_value=null_value, main_key_position=main_key_position,
@@ -233,7 +230,6 @@ xls_to_dict = xls_to_json
 
 def json_to_csv(path, main_key=None, order=None, save_to_file=False, if_empty_value=None, main_key_position=0,
                 ignore_file_type=False, **kwargs):
-    # ToDo add support for inverse csv writing
     """
     Converts a dictionary or json to csv. The dictionary converts as {main_key: dict[line_key][header_key][row_entry]}
 
@@ -265,7 +261,6 @@ def json_to_csv(path, main_key=None, order=None, save_to_file=False, if_empty_va
 
     if kwargs:
         _register_csv_dialect(**kwargs)
-        # ToDo add support for builtin dialects
 
     # converting
     conversion = _FileConversion(path=path, file_type="json", function=_json_to_csv,
@@ -280,7 +275,6 @@ dict_to_csv = json_to_csv
 
 
 def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None, order=None, ignore_file_type=False):
-    # ToDo make multiple jsons be written in single excel file
     """
     converts a json/dict to a xlsx
 
