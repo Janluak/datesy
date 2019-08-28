@@ -114,7 +114,7 @@ def write_xlsx_from_DataFrame(file: str, data_frame, sheet=None):
     writer.save()
 
 
-def write_xlsx_single_sheet_from_dict(file: str, data: dict, sheet=None, order=None):
+def write_xlsx_single_sheet_from_dict(file: str, data: dict, main_key=None, sheet=None, order=None):
     """
     saves a pandas data_frame to file
     Parameters
@@ -124,6 +124,8 @@ def write_xlsx_single_sheet_from_dict(file: str, data: dict, sheet=None, order=N
     data : dict
         dictionary of data. {main_key: {data}}
         if more than one main_key is provided the main_key is treated as sheet name
+    main_key : str
+        if the json or dict does not have the main key as a single {main_key : dict} present, it needs to be specified
     sheet : str
         a sheet name for the data
     order : list
