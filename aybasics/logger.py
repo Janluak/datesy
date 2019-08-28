@@ -1,6 +1,7 @@
 from loguru import logger
 import sys
 
+
 def basic_log(log_level=5):
     # ToDo add thread name to style
     # Todo create different styles (one with threading one without)
