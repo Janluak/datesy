@@ -114,7 +114,7 @@ def write_xlsx_from_DataFrame(file: str, data_frame, sheet=None):
     writer.save()
 
 
-def write_xlsx_from_dict(file: str, data: dict, sheet=None, order=None):
+def write_xlsx_single_sheet_from_dict(file: str, data: dict, sheet=None, order=None):
     """
     saves a pandas data_frame to file
     Parameters
@@ -126,9 +126,8 @@ def write_xlsx_from_dict(file: str, data: dict, sheet=None, order=None):
         if more than one main_key is provided the main_key is treated as sheet name
     sheet : str
         a sheet name for the data
-        ! only for single data_frames. otherwise the dict[key] is used for sheet name !
-    order : [list, dict]
-        list with the column names in order, dict if multiple sheets with sheet_name as key for order
+    order : list
+        list with the column names in order
 
     """
     if "." not in file:
@@ -137,15 +136,36 @@ def write_xlsx_from_dict(file: str, data: dict, sheet=None, order=None):
     from pandas import ExcelWriter
     from ._converting import _json_to_pandas_data_frame
     writer = ExcelWriter(file)
-    try:
-        [main_key] = data.keys()
-        [data] = data.values()
-        data = _json_to_pandas_data_frame(data, main_key, order)
-        data.to_excel(writer, sheet_name=sheet if sheet else "Sheet1")
-    except ValueError:
-        for key in data:
-            [main_key] = data[key].keys()
-            [data_sheet] = data[key].values()
-            data_sheet = _json_to_pandas_data_frame(data_sheet, main_key, order[key])
-            data_sheet.to_excel(writer, sheet_name=key)
+    [main_key] = data.keys()
+    [data] = data.values()
+    data = _json_to_pandas_data_frame(data, main_key, order)
+    data.to_excel(writer, sheet_name=sheet if sheet else "Sheet1")
+    writer.save()
+
+
+def write_xlsx_multi_sheet_from_dict_of_dicts(file: str, data: dict, order=None):
+    """
+    saves a pandas data_frame to file
+    Parameters
+    ----------
+    file : str
+        the file_name to save under. if no ending is provided, saved as .xlsx
+    data : dict
+        dictionary of data. {main_key: {data}}
+        if more than one main_key is provided the main_key is treated as sheet name
+    order : dict
+        dict with sheet_name as key for order
+
+    """
+    if "." not in file:
+        file += ".xlsx"
+    logger.info("saving to file: {}".format(file))
+    from pandas import ExcelWriter
+    from ._converting import _json_to_pandas_data_frame
+    writer = ExcelWriter(file)
+    for key in data:
+        [main_key] = data[key].keys()
+        [data_sheet] = data[key].values()
+        data_sheet = _json_to_pandas_data_frame(data_sheet, main_key, order[key])
+        data_sheet.to_excel(writer, sheet_name=key)
     writer.save()
