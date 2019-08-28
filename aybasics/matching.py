@@ -17,7 +17,7 @@ def _check_for_unique_similarity(simi, value, dict_entry):
 
 
 def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False, auto_match_all=True,
-                  print_auto_match=False, single_match_only=True,
+                  print_auto_match=False, single_match_only=True, enforce_comprehensive_check=False,
                   minimal_distance_for_automatic_matching=0.1, similarity_limit_for_manual_checking=0.6):
     """
     Returns a dictionary with list_a as keys and list_b as values based on most similarity.
@@ -40,6 +40,9 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
         Especially for human rechecking: printing the automatically matched cases
     single_match_only : bool
         if mapping elements multiple times shall be used. otherwise unique sets are required
+    enforce_comprehensive_check : bool
+        if this flag is set, the function checks every single similarity between the sets and starts mapping with the strongest match.
+        due to high complexity and good matching rate for sets if elements quite diverse, only use if similar sets
     minimal_distance_for_automatic_matching : float
         If there is a vast difference between the most and second most matching value, automatically matching is provided
         This parameter provides the similarity distance to be reached for automatically matching
@@ -91,9 +94,8 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
     match = dict()
     no_match = list()
     most_similar = dict()
-    most_similar_reverse = dict()
     ordered_most_similar = dict()
-    ordered_most_similar_reverse = dict()
+    all_similarities = dict()
 
     # if direct matches
     for entry_a in list_for_matching.copy():
@@ -112,34 +114,121 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
             if similarity > similarity_limit_for_manual_checking:
 
                 _check_for_unique_similarity(similarity, entry_b, most_similar[entry_a])
-                if entry_b not in most_similar_reverse:
-                    most_similar_reverse[entry_b] = dict()
-
-                _check_for_unique_similarity(similarity,entry_b, most_similar_reverse[entry_b])
+                if similarity not in all_similarities:
+                    all_similarities[similarity] = list()
+                if enforce_comprehensive_check:
+                    all_similarities[similarity].append((entry_a, entry_b))
 
         ordered_most_similar[entry_a] = sorted(list(most_similar[entry_a].keys()))[::-1]
-    for entry_b in most_similar_reverse:
-        ordered_most_similar_reverse[entry_b] = sorted(list(most_similar_reverse[entry_b].keys()))[::-1]
+    if enforce_comprehensive_check:
+        ordered_all_similarities = sorted(list(all_similarities.keys()))[::-1]
 
     # automatic matching all #
     if auto_match_all:
-        for entry_a in list_for_matching.copy():
-            try:
-                match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
-                list_for_matching.remove(entry_a)
-                if isinstance(most_similar[entry_a][ordered_most_similar[entry_a][0]], list):
-                    most_similar_list = most_similar[entry_a][ordered_most_similar[entry_a][0]]
-                    while most_similar_list:
-                        list_to_be_matched_to.remove(most_similar_list[0])
-                        most_similar_list = most_similar_list[1:]
+        if not enforce_comprehensive_check:
+            for entry_a in list_for_matching.copy():
+                try:
+                    match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                    list_for_matching.remove(entry_a)
+                    if isinstance(most_similar[entry_a][ordered_most_similar[entry_a][0]], list):
+                        most_similar_list = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                        while most_similar_list:
+                            list_to_be_matched_to.remove(most_similar_list[0])
+                            most_similar_list = most_similar_list[1:]
+                    else:
+                        list_to_be_matched_to.remove(most_similar[entry_a][ordered_most_similar[entry_a][0]])
+                    if print_auto_match:
+                        print("automatically matched: {} - {}".format(entry_a,
+                                                                      most_similar[entry_a][
+                                                                          ordered_most_similar[entry_a][0]]))
+                except IndexError:
+                    pass
+        else:
+            from pandas import DataFrame
+            similarities = list()
+            entries_a = list()
+            entries_b = list()
+            for similarity in ordered_all_similarities:
+                for match_set in all_similarities[similarity]:
+                    similarities.append(similarity)
+                    entries_a.append(match_set[0])
+                    entries_b.append(match_set[1])
+            df = DataFrame({"similarity": similarities, "entry_a": entries_a, "entry_b": entries_b}, columns=["similarity", "entry_a", "entry_b"])
+            old_length = 0
+
+            while len(df.similarity) != 0 and len(df.similarity) != old_length:
+                old_length = len(df.similarity)
+                highest_similarity = df.similarity[0]
+                if len(df.similarity) > 1 and highest_similarity != df.similarity[1] or len(df.similarity) == 0:
+                    entry_a = df.entry_a[0]
+                    entry_b = df.entry_b[0]
+                    match[entry_a] = entry_b
+                    df = df[df.similarity != highest_similarity]
+                    df = df[df.entry_a != entry_a]
+                    df = df[df.entry_b != entry_b]
+                    df = df.reset_index(drop=True)
                 else:
-                    list_to_be_matched_to.remove(most_similar[entry_a][ordered_most_similar[entry_a][0]])
-                if print_auto_match:
-                    print("automatically matched: {} - {}".format(entry_a,
-                                                                  most_similar[entry_a][
-                                                                      ordered_most_similar[entry_a][0]]))
-            except IndexError:
-                pass
+                    indexes = list()
+                    index = -1
+                    for similarity in df.similarity:
+                        index += 1
+                        if highest_similarity == similarity:
+                            indexes.append(index)
+                        else:
+                            break
+
+                    # get all entries of un-unique similarity
+                    all_entries = list()
+                    all_entries_with_index = dict()
+                    for index in indexes:
+                        all_entries.append(df.entry_a[index])
+                        if df.entry_a[index] not in all_entries_with_index:
+                            all_entries_with_index[df.entry_a[index]] = list()
+                        all_entries_with_index[df.entry_a[index]].append(index)
+
+                        all_entries.append(df.entry_b[index])
+                        if df.entry_b[index] not in all_entries_with_index:
+                            all_entries_with_index[df.entry_b[index]] = list()
+                        all_entries_with_index[df.entry_b[index]].append(index)
+
+                    # get all entries which are doubled
+                    doubled_entries = all_entries.copy()
+                    for element in set(all_entries):
+                        doubled_entries.remove(element)
+
+                    unmatchable_indexes = list()
+                    for element in doubled_entries:
+                        for index in all_entries_with_index[element]:
+                            indexes.remove(index)
+                            unmatchable_indexes.append(index)
+
+                    if indexes:
+                        for index in indexes:
+                            entry_a = df.entry_a[index]
+                            entry_b = df.entry_b[index]
+                            match[entry_a] = entry_b
+                            df = df[df.entry_a != entry_a]
+                            df = df[df.entry_b != entry_b]
+                            df = df.reset_index(drop=True)
+
+                    else:
+                        # too similar strings: if for_matching doubled,
+                        # return all to_be_matched_to; otherwise add unmatched
+                        entry_a = df.entry_a[0]
+                        entry_b = df.entry_b[0]
+
+                        multiple_match = list()
+                        for element in doubled_entries:
+                            for i, j in enumerate(list(df.entry_a)):
+                                if j == element:
+                                    multiple_match.append(df.entry_b[i])
+                        if multiple_match:
+                            match[entry_a] = multiple_match
+
+                        df = df[df.entry_a != entry_a]
+                        df = df[df.entry_b != entry_b]
+                        df = df.reset_index(drop=True)
+
         no_match = set(list_for_matching).difference(set(match))
 
     # human interfering matching #
@@ -230,6 +319,3 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
 
     return match, no_match
 
-
-matched, no_match = match_similar(["Apple", "pineapple", "Oranje", "marmalada", "seets"],
-                                          ["Apple", "pineappla", "Pineapple", "marmalade", "sweets", "Orange"])
