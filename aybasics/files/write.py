@@ -114,7 +114,7 @@ def write_xlsx_from_DataFrame(file: str, data_frame, sheet=None):
     writer.save()
 
 
-def write_xlsx_from_dict(file: str, data: dict, sheet=None):
+def write_xlsx_from_dict(file: str, data: dict, sheet=None, order=None):
     """
     saves a pandas data_frame to file
     Parameters
@@ -127,6 +127,8 @@ def write_xlsx_from_dict(file: str, data: dict, sheet=None):
     sheet : str
         a sheet name for the data
         ! only for single data_frames. otherwise the dict[key] is used for sheet name !
+    order : [list, dict]
+        list with the column names in order, dict if multiple sheets with sheet_name as key for order
 
     """
     if "." not in file:
@@ -138,12 +140,12 @@ def write_xlsx_from_dict(file: str, data: dict, sheet=None):
     try:
         [main_key] = data.keys()
         [data] = data.values()
-        data = _json_to_pandas_data_frame(data, main_key)
+        data = _json_to_pandas_data_frame(data, main_key, order)
         data.to_excel(writer, sheet_name=sheet if sheet else "Sheet1")
     except ValueError:
         for key in data:
             [main_key] = data[key].keys()
             [data_sheet] = data[key].values()
-            data_sheet = _json_to_pandas_data_frame(data_sheet, main_key)
+            data_sheet = _json_to_pandas_data_frame(data_sheet, main_key, order[key])
             data_sheet.to_excel(writer, sheet_name=key)
     writer.save()

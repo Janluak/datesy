@@ -186,13 +186,13 @@ def _xml_to_json(file, memory, save_to_file, list_reduction, manual_selection):
         write_json(file.split(".")[0] + ".json", data)
 
 
-def _json_to_xlsx(file, memory, save_to_file, main_key, sheets, data=False):
+def _json_to_xlsx(file, memory, save_to_file, main_key, sheets, order=None, data=False):
     if not data:
         from .load import load_json
         data = load_json(file)
         logger.info("current file: {}".format(file.split("/")[-1]))
 
-    data_frame = _json_to_pandas_data_frame(data, main_key)
+    data_frame = _json_to_pandas_data_frame(data, main_key, order)
 
     if memory:
         memory[file] = data_frame
@@ -202,15 +202,28 @@ def _json_to_xlsx(file, memory, save_to_file, main_key, sheets, data=False):
         write_xlsx(file.split(".")[0] + ".xlsx", data_frame, sheets)
 
 
-def _json_to_pandas_data_frame(data, main_key=None, inverse=False):
+def _json_to_pandas_data_frame(data, main_key=None, order=None, inverse=False):
     from pandas import DataFrame
     if not main_key:
         data, main_key = _cast_main_key(data)
 
-    if not inverse:
-        data_frame = DataFrame.from_dict(data, orient="index")
+    if not order:
+        if not inverse:
+            data_frame = DataFrame.from_dict(data, orient="index")
+        else:
+            data_frame = DataFrame.from_dict(data)
     else:
-        data_frame = DataFrame.from_dict(data)
+        if not inverse:
+            data_frame = DataFrame.from_dict(data, orient="index", columns=order)
+        else:
+            data_frame = DataFrame.from_dict(data, columns=order)
+
+        if not isinstance(order, list):
+            raise TypeError("expected list type for order, received type {}. received order: {}".
+                            format(type(order), order))
+        data_frame[main_key] = data_frame.index
+        data_frame.set_index(order[0], inplace=True)
+
     data_frame.index.name = main_key
 
     return data_frame

@@ -279,7 +279,7 @@ def json_to_csv(path, main_key=None, order=None, save_to_file=False, if_empty_va
 dict_to_csv = json_to_csv
 
 
-def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None, ignore_file_type=False):
+def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None, order=None, ignore_file_type=False):
     # ToDo make multiple jsons be written in single excel file
     """
     converts a json/dict to a xlsx
@@ -294,6 +294,8 @@ def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None, ignore_fil
         if the json or dict does not have the main key as a single {main_key : dict} present, it needs to be specified
     sheets : str
         the name of the excel sheet to write in
+    order : list
+        list with the column names in order
     ignore_file_type : bool
         if the checking for the file_type shall be dismissed
 
@@ -302,7 +304,7 @@ def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None, ignore_fil
 
     """
     from ._converting import _json_to_xlsx
-    conversion = _FileConversion(path=path, file_type="json", function=_json_to_xlsx, main_key=main_key,
+    conversion = _FileConversion(path=path, file_type="json", function=_json_to_xlsx, main_key=main_key, order=order,
                                  save_to_file=save_to_file, sheets=sheets, ignore_file_type=ignore_file_type)
 
     return conversion.data
