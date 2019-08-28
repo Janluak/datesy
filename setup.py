@@ -8,7 +8,7 @@ from setuptools import setup
 # https://python-packaging.readthedocs.io/en/latest/minimal.html
 
 setup(name='aybasics',
-      version='1.0',
+      version='0.9',
       description='Some basic tools for IM and doing stuff with data',
       url='###',
       author='Jan Lukas Braje',
@@ -18,7 +18,7 @@ setup(name='aybasics',
       python_requires='>=3.7',
       zip_safe=False,
       classifiers=[
-          "Development Status :: 5 - Production/Stable",
+          "Development Status :: Development Status :: 4 - Beta",
           "Intended Audience :: Information Technology",
           "License :: OSI Approved :: Apache Software License 2.0",
           "Operating System :: OS Independent",
