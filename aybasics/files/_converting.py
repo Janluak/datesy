@@ -29,8 +29,8 @@ def _reduce_lists(sub_dict, list_for_reduction, manual_selection, depth_in_list=
 def _cast_main_key(data):
     if isinstance(data, dict):
         if len(data.keys()) == 1:
-            main_key = list(data.keys())[0]
-            data = list(data.values())[0]
+            [main_key] = data.keys()
+            [data] = data.values()
             return data, main_key
         raise ValueError("Dict has more than one key. "
                          "Please provide either the main_key for dicts with more than one entry or "
