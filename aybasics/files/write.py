@@ -136,8 +136,8 @@ def write_xlsx_single_sheet_from_dict(file: str, data: dict, sheet=None, order=N
     from pandas import ExcelWriter
     from ._converting import _json_to_pandas_data_frame
     writer = ExcelWriter(file)
-    [main_key] = data.keys()
-    [data] = data.values()
+    if not main_key:
+        data, main_key = _cast_main_key(data)
     data = _json_to_pandas_data_frame(data, main_key, order)
     data.to_excel(writer, sheet_name=sheet if sheet else "Sheet1")
     writer.save()
