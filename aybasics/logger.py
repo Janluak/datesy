@@ -11,6 +11,3 @@ def basic_log(log_level=5):
     logger.add(sys.stderr, level=log_level, format=style)
     return logger
 
-
-log = basic_log()
-
