@@ -107,6 +107,8 @@ def write_xlsx_from_DataFrame(file: str, data_frame, sheet=None):
     from pandas import ExcelWriter
     writer = ExcelWriter(file)
     if isinstance(data_frame, dict):
+        if sheet_name:
+            raise ValueError("can't specify a sheet_name if already having dictionary_keys for sheet_names!")
         for key in data_frame:
             data_frame[key].to_excel(writer, sheet_name=key)
     else:
