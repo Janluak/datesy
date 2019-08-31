@@ -31,7 +31,7 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
         List of strings which shall be matched
     list_to_be_matched_to : list
         List of stings which shall be matched to
-    simplify_with : {False, "capital", "separators", "all", list, str}
+    simplify_with : False, "capital", "separators", "all", list, str
         For reducing the values by all small letters or unifying & deleting separators `separators`
         or any other list of strings provided
     auto_match_all : bool
@@ -52,7 +52,7 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
     Returns
     -------
     match : dict
-        {value_for_matching: value_to_be_mapped_to}
+        `{value_for_matching: value_to_be_mapped_to}`
     no_match : list
         A list of all values that could not be matched
 

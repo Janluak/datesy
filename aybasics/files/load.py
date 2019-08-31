@@ -4,9 +4,10 @@ from aybasics.logger import logger
 def load_json(files):
     """
     loads a json file to a dictionary
+
     Parameters
     ----------
-    files : [str, list]
+    files : str, list
         either a list of file names or a file_name
 
     Returns
@@ -33,16 +34,17 @@ def load_json(files):
 def load_csv(files, **kwargs):
     """
     loads a csv file and returns the rows
+
     Parameters
     ----------
-    files : [str, list]
+    files : str, list
         either a list of file names or a file_name
     kwargs
         csv dialect options
 
     Returns
     -------
-    data : [list, dict]
+    data : list, dict
         if a single file was provided, the list of lists
         if multiple files provided, a dict of list of lists
 
@@ -70,18 +72,19 @@ def load_csv(files, **kwargs):
 def load_xls(files, sheets=None, ret_single=False):
     """
     loading a xls or xlsx file to a pandas.DataFrame
+
     Parameters
     ----------
-    files : [str, list]
+    files : str, list
         either a list of file names or a file_name
-    sheets : [str, list]
+    sheets : str, list
         either a sheet_name or list of sheet_names to extract
     ret_single : bool
         if only single data_frame shall be returned. Only due to bug implemented! To be removed!
 
     Returns
     -------
-    data : [list, dict]
+    data : list, dict
             if a single file was provided, the pandas.DataFrame
             if multiple files provided, a dict of pandas.DataFrame
     """

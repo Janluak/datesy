@@ -28,11 +28,15 @@ def _get_files(conversion, file_type, ignore_file_type):
     """
     Returns all files for concerting as a list.
     If a single file is provided as path, returns single file in list
-     Parameters
+
+    Parameters
     ----------
     conversion : object
-    file_type : [str, list]
+    file_type : str, list
         the filename ending specifying the file type
+    ignore_file_type : bool
+        if a different file_ending than expected shall be ignored
+
     Returns
     -------
     files : list
@@ -101,13 +105,12 @@ class _FileConversion:
 def _register_csv_dialect(**kwargs):
     """
     registers a csv dialect from kwargs with differences to main unix dialect
+
     Parameters
     ----------
     kwargs
         all parameters for changing from unix basic dialect
 
-    Returns
-    -------
 
     """
     import csv
@@ -128,7 +131,7 @@ def csv_to_json(path, save_to_file=False, null_value="delete", main_key_position
         path of files or file
     save_to_file : bool
         if data is supposed to be saved to file
-    null_value
+    null_value : any
         the value to fill the key if no value in csv file. If "delete", key in json not being present
     main_key_position : int
         the position in csv file for the main key for this row
@@ -136,6 +139,7 @@ def csv_to_json(path, save_to_file=False, null_value="delete", main_key_position
         if the header is not in the first row, select row here. WARNING: all data above this line will not be parsed
     ignore_file_type : bool
         if the checking for the file_type shall be dismissed
+
     Returns
     -------
     data : dict
@@ -163,7 +167,7 @@ def xml_to_json(path, save_to_file=False, list_reduction=False, manual_selection
         path of files or file
     save_to_file : bool
         if data is supposed to be saved to file
-    list_reduction : {bool, list}
+    list_reduction : bool, list
         if multiple keys on same hierarchy level the function tries to reduce the lists by creating a virtual dictionary
         key with unique values: key_of_list-unique_key_in_dicts_in_list
         if a list is provided, this list is used for selecting the keys in the dictionaries. the list is level based,
@@ -205,15 +209,18 @@ def xls_to_json(path, save_to_file=False, main_key_position=0, null_value="delet
         the position in csv file for the main key for this row
      header_line : int
         if the header is not in the first row, select row here. WARNING: all data above this line will not be parsed
-    sheets : [str, list, True]
+    sheets : str, list, True
         supported only for single files
         the name of the sheets to be parsed either (if only one sheet) as single string,
         list of strings or True for all sheets
     ignore_file_type : bool
         if the checking for the file_type shall be dismissed
+
     Returns
     -------
-
+    data : dict
+        dictionary containing xls data as {sheet_name: {main_key_value: {other_key: value, …}}.
+        (sheet_name and dict_structure missing if only one sheet)
     """
     from ._converting import _xlsx_to_json
     conversion = _FileConversion(path=path, file_type="xls", function=_xlsx_to_json, save_to_file=save_to_file,
@@ -253,7 +260,7 @@ def json_to_csv(path, main_key=None, order=None, save_to_file=False, if_empty_va
     Returns
     -------
 
-    rows : [list, dict]
+    rows : list, dict
         a list of rows representing the csv file (if multiple files in a dictionary with filename as key)
 
     """
@@ -295,6 +302,8 @@ def json_to_xlsx(path, main_key=None, save_to_file=True, sheets=None, order=None
 
     Returns
     -------
+    data : DataFrame
+        returns the pandas.DataFrame representing the xlsx file
 
     """
     from ._converting import _json_to_xlsx

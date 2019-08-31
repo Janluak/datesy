@@ -1,5 +1,5 @@
 from aybasics.logger import logger
-from aybasics.files._converting import _cast_main_key
+from aybasics.files._converting import _cast_main_key_name
 
 
 def write_json(file: str, data: dict):
@@ -25,6 +25,7 @@ def write_json(file: str, data: dict):
 def write_csv_from_dict(file: str, data: dict, main_key=None, order=None, if_empty_value=None, main_key_position=0, **kwargs):
     """
     saves a row based document to csv file from a dictionary
+
     Parameters
     ----------
     file : str
@@ -44,7 +45,7 @@ def write_csv_from_dict(file: str, data: dict, main_key=None, order=None, if_emp
 
     """
     if not main_key:
-        data, main_key = _cast_main_key(data)
+        data, main_key = _cast_main_key_name(data)
 
     if "." not in file:
         file += ".csv"
@@ -87,18 +88,19 @@ def write_csv_from_rows(file: str, rows: list, **kwargs):
             w.writerow(row)
 
 
-def write_xlsx_from_DataFrame(file: str, data_frame, sheet=None):
+def write_xlsx_from_DataFrame(file: str, data_frame, sheet_name=None):
     """
     saves a pandas data_frame to file
+
     Parameters
     ----------
     file : str
         the file_name to save under. if no ending is provided, saved as .xlsx
-    data_frame : [pandas.DataFrame, dict]
+    data_frame : pandas.DataFrame, dict
         either a data_frame or a dict of data_frames
-    sheet : str
-        a sheet name for the data
-        ! only for single data_frames. otherwise the dict[key] is used for sheet name !
+    sheet_name : str
+        a sheet_name for the data
+        ! only for single data_frames. otherwise the dict[key] is used for sheet_name !
 
     """
     if "." not in file:
@@ -112,22 +114,23 @@ def write_xlsx_from_DataFrame(file: str, data_frame, sheet=None):
         for key in data_frame:
             data_frame[key].to_excel(writer, sheet_name=key)
     else:
-        data_frame.to_excel(writer, sheet_name=sheet if sheet else "Sheet1")
+        data_frame.to_excel(writer, sheet_name=sheet_name if sheet_name else "Sheet1")
     writer.save()
 
 
 def write_xlsx_single_sheet_from_dict(file: str, data: dict, main_key=None, sheet=None, order=None):
     """
     saves a pandas data_frame to file
+
     Parameters
     ----------
     file : str
         the file_name to save under. if no ending is provided, saved as .xlsx
     data : dict
-        dictionary of data. {main_key: {data}}
+        dictionary of data. `{main_key: {data}}`
         if more than one main_key is provided the main_key is treated as sheet name
     main_key : str
-        if the json or dict does not have the main key as a single {main_key : dict} present, it needs to be specified
+        if the json or dict does not have the main key as a single `{main_key : dict}` present, it needs to be specified
     sheet : str
         a sheet name for the data
     order : list
@@ -141,7 +144,7 @@ def write_xlsx_single_sheet_from_dict(file: str, data: dict, main_key=None, shee
     from ._converting import _json_to_pandas_data_frame
     writer = ExcelWriter(file)
     if not main_key:
-        data, main_key = _cast_main_key(data)
+        data, main_key = _cast_main_key_name(data)
     data = _json_to_pandas_data_frame(data, main_key, order)
     data.to_excel(writer, sheet_name=sheet if sheet else "Sheet1")
     writer.save()
@@ -150,12 +153,13 @@ def write_xlsx_single_sheet_from_dict(file: str, data: dict, main_key=None, shee
 def write_xlsx_multi_sheet_from_dict_of_dicts(file: str, data: dict, order=None):
     """
     saves a pandas data_frame to file
+
     Parameters
     ----------
     file : str
         the file_name to save under. if no ending is provided, saved as .xlsx
     data : dict
-        dictionary of data. {main_key: {data}}
+        dictionary of data. `{main_key: {data}}`
         if more than one main_key is provided the main_key is treated as sheet name
     order : dict
         dict with sheet_name as key for order

@@ -2,6 +2,21 @@ from aybasics.logger import logger
 
 
 def _dictionize(sub_dict):
+    """
+    creates normal dictionaries from a sub_dictionary containing orderedDicts
+
+    Parameters
+    ----------
+    sub_dict : dict
+        a dictionary with unlimited data structure depth and types
+
+    Returns
+    -------
+    normalized_dict : dict
+        the same data structure as `sub_dict` just without orderedDicts
+
+
+    """
     from collections import OrderedDict
     normalized_dict = dict()
     for key in sub_dict:
@@ -25,12 +40,29 @@ def _reduce_lists(sub_dict, list_for_reduction, manual_selection, depth_in_list=
     raise NotImplemented
 
 
-def _cast_main_key(data):
+def _cast_main_key_name(data):
+    """
+    casts the main_key_name in a dictionary `{main_key_name: {main_key_1 : {…}, maine_key_2 : {…}}}`
+
+    a main_key_name is the name for all the main_keys
+
+    Parameters
+    ----------
+    data : dict
+        the dictionary to cast the main_key_name from
+
+    Returns
+    -------
+    data : dict
+        the input data with the main_keys as new top_level keys of dict `{main_key_1 : {…}, maine_key_2 : {…}}`
+    main_key_name : str
+        the name of the main_keys
+    """
     if isinstance(data, dict):
         if len(data.keys()) == 1:
-            [main_key] = data.keys()
+            [main_key_name] = data.keys()
             [data] = data.values()
-            return data, main_key
+            return data, main_key_name
         raise ValueError("Dict has more than one key. "
                          "Please provide either the main_key for dicts with more than one entry or "
                          "provide dict with only one key")
@@ -40,11 +72,13 @@ def _cast_main_key(data):
 def _csv_to_json(file, memory, save_to_file, main_key_position, null_value, dialect, header_line):
     """
     Converts a single file from csv to json
+
     Parameters
     ----------
     file : str
+    memory : dict
     main_key_position : int
-    dialect : [str, None]
+    dialect : str, None
     null_value
     header_line : int
 
@@ -80,19 +114,23 @@ def _csv_to_json(file, memory, save_to_file, main_key_position, null_value, dial
 def _json_to_csv(file, memory, save_to_file, dialect, main_key_position, if_empty_value, order, main_key=None,
                  data=False):
     """
+    Converts a single file from json to csv
 
     Parameters
     ----------
     file : str
+    memory : dict
     main_key : str
-    dialect : [str, None]
+    dialect : str, None
     main_key_position : int
     if_empty_value
-    order : [dict, None]
+    order : dict, None
     data : object
 
     Returns
     -------
+    rows : list(lists)
+        list of rows representing the csv based on the `main_key_position`
 
     """
     if not data:
@@ -100,7 +138,7 @@ def _json_to_csv(file, memory, save_to_file, dialect, main_key_position, if_empt
         data = load_json(file)
         logger.info("current file: {}".format(file.split("/")[-1]))
     if not main_key:
-        data, main_key = _cast_main_key(data)
+        data, main_key = _cast_main_key_name(data)
 
     header_keys = set()
     try:
@@ -150,6 +188,23 @@ def _json_to_csv(file, memory, save_to_file, dialect, main_key_position, if_empt
 
 
 def _xml_to_json(file, memory, save_to_file, list_reduction, manual_selection):
+    """
+    Converts a single file from xml to json
+
+    Parameters
+    ----------
+    file : str
+    memory : dict
+    save_to_file : bool
+    list_reduction : bool
+    manual_selection : bool
+
+    Returns
+    -------
+
+
+    """
+
     from collections import OrderedDict
 
     from xmltodict import parse
@@ -175,6 +230,24 @@ def _xml_to_json(file, memory, save_to_file, list_reduction, manual_selection):
 
 
 def _json_to_xlsx(file, memory, save_to_file, main_key, sheets, order=None, data=False):
+    """
+    Converts a single file from json to xlsx
+    
+    Parameters
+    ----------
+    file : str
+    memory : dict
+    save_to_file : bool
+    main_key : str
+    sheets : 
+    order
+    data
+
+    Returns
+    -------
+
+    """
+    raise DeprecationWarning("Function not working: see issue #21")
     if not data:
         from .load import load_json
         data = load_json(file)
@@ -191,9 +264,24 @@ def _json_to_xlsx(file, memory, save_to_file, main_key, sheets, order=None, data
 
 
 def _json_to_pandas_data_frame(data, main_key=None, order=None, inverse=False):
+    """
+    Converts a single file from dict to pandas.DataFrame
+
+    Parameters
+    ----------
+    data : dict
+    main_key : str
+    order : list
+    inverse : bool
+
+    Returns
+    -------
+    data_frame : pandas.DataFrame
+
+    """
     from pandas import DataFrame
     if not main_key:
-        data, main_key = _cast_main_key(data)
+        data, main_key = _cast_main_key_name(data)
 
     if not order:
         if not inverse:
@@ -222,6 +310,24 @@ def _xlsx_to_csv(file, memory, save_to_file, main_key_position, null_value, head
 
 
 def _xlsx_to_json(file, memory, save_to_file, main_key_position, null_value, header_line, sheets):
+    """
+    Converts a single file from xlsx to json
+
+    Parameters
+    ----------
+    file : str
+    memory : dict
+    save_to_file : bool
+    main_key_position : int
+    null_value
+    header_line : int
+    sheets : list
+
+    Returns
+    -------
+    data : dict
+        the dictionary representing the xlsx based on `main_key_position`
+    """
     from .load import load_xls
     from pandas import notnull
     data_frame = load_xls(file, sheets, ret_single=True)
