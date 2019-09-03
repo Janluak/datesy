@@ -53,7 +53,6 @@ def write_csv_from_dict(file: str, data: dict, main_key=None, order=None, if_emp
         from .converting import _register_csv_dialect
         _register_csv_dialect(**kwargs)
 
-    logger.info("saving to file: {}".format(file))
     from ._converting import _json_to_csv
 
     _json_to_csv(file=file, main_key=main_key, main_key_position=main_key_position, if_empty_value=if_empty_value, order=order,
