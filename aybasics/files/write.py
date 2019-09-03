@@ -82,7 +82,6 @@ def write_csv_from_rows(file: str, rows: list, **kwargs):
         _register_csv_dialect(**kwargs)
     with open(file.replace(".json", ".csv"), "w") as fw:
         w = writer(fw,  dialect="custom" if kwargs and "dialect" not in kwargs else "unix")
-        logger.info("filename: {}".format(file))
         for row in rows:
             w.writerow(row)
 
