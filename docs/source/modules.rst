@@ -1,7 +1,7 @@
-aybasics
+datesy
 ========
 
 .. toctree::
    :maxdepth: 4
 
-   aybasics
+   datesy

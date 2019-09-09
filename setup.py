@@ -15,7 +15,7 @@ setup(name=project_name,
       author=author,
       author_email=author_email,
       license=packet_license,
-      packages=["aybasics"],
+      packages=["datesy"],
       python_requires='>=3.7',
       zip_safe=False,
       classifiers=[

@@ -11,7 +11,7 @@ Welcome to datesy's documentation!
    :caption: Contents:
 
  intro
- aybasics
+ datesy
  examples
 
 

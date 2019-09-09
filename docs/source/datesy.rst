@@ -1,4 +1,4 @@
-aybasics package
+datesy package
 ================
 
 Subpackages
@@ -6,32 +6,32 @@ Subpackages
 
 .. toctree::
 
-   aybasics.file_IO
+   datesy.file_IO
 
 Submodules
 ----------
 
-aybasics.convert module
+datesy.convert module
 -----------------------
 
-.. automodule:: aybasics.convert
+.. automodule:: datesy.convert
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-aybasics.inspect module
+datesy.inspect module
 -----------------------
 
-.. automodule:: aybasics.inspect
+.. automodule:: datesy.inspect
    :members:
    :undoc-members:
    :show-inheritance:
 
-aybasics.matching module
+datesy.matching module
 ------------------------
 
-.. automodule:: aybasics.matching
+.. automodule:: datesy.matching
    :members:
    :undoc-members:
    :show-inheritance:
