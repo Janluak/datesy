@@ -1,10 +1,5 @@
 from difflib import SequenceMatcher
-import re, os
-from aybasics.logger import logger
-
-
-def similar(a, b):
-    return SequenceMatcher(None, a, b).ratio()
+import re, os, logging
 
 
 def _check_for_unique_similarity(simi, value, dict_entry):
@@ -20,7 +15,7 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
                   print_auto_match=False, single_match_only=True, enforce_comprehensive_check=False,
                   minimal_distance_for_automatic_matching=0.1, similarity_limit_for_manual_checking=0.6):
     """
-    Returns a dictionary with list_a as keys and list_b as values based on most similarity.
+    Returns a dictionary with #!list_a as keys and #!list_b as values based on most similarity.     # Imperativ ein Satz!
     Matching twice to the same value is possible!
     If auto_match_all is set to False, human interface is able to decline a match. Similarity distance for switching
     between automatic matches and manual is set by `distance_for_automatic_vs_manual_matching`.
@@ -110,7 +105,7 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
         most_similar[entry_a] = dict()
         for entry_b in list_to_be_matched_to:
 
-            similarity = similar(entry_a, entry_b)
+            similarity = SequenceMatcher(None, entry_a, entry_b).ratio()
             if similarity > similarity_limit_for_manual_checking:
 
                 _check_for_unique_similarity(similarity, entry_b, most_similar[entry_a])
@@ -153,7 +148,8 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
                     similarities.append(similarity)
                     entries_a.append(match_set[0])
                     entries_b.append(match_set[1])
-            df = DataFrame({"similarity": similarities, "entry_a": entries_a, "entry_b": entries_b}, columns=["similarity", "entry_a", "entry_b"])
+            df = DataFrame({"similarity": similarities, "entry_a": entries_a, "entry_b": entries_b},
+                           columns=["similarity", "entry_a", "entry_b"])
             old_length = 0
 
             while len(df.similarity) != 0 and len(df.similarity) != old_length:
@@ -309,7 +305,7 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
 
             if entry_a not in match:
                 no_match.append(entry_a)
-                logger.warning('no similarity for "{}" above {}% similarity'.
+                logging.warning('no similarity for "{}" above {}% similarity'.
                                format(entry_a, similarity_limit_for_manual_checking * 100))
 
     # translating back to the original values #
@@ -318,4 +314,3 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
         no_match = {dict_for_matching[key] for key in no_match}
 
     return match, no_match
-

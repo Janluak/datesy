@@ -1,24 +1,25 @@
 """
-The setup file.
-If development mode (=changes in package code directly delivered to python) `pip install -e .` in directory of this file
+The setup file_name.
+If development mode (=changes in package code directly delivered to python) `pip install -e .` in directory of this file_name
 """
 
 from setuptools import setup
+from static_information import *
 
 # https://python-packaging.readthedocs.io/en/latest/minimal.html
 
-setup(name='aybasics',
-      version='0.9',
-      description='Some basic tools for IM and doing stuff with data',
-      url='###',
-      author='Jan Lukas Braje',
-      author_email='jan@braje.org',
-      license='Apache 2.0',
-      packages=[],
+setup(name=project_name,
+      version=version,
+      description='basic tools for taking care for making the intro to handling handling with python easier',
+      url=url,
+      author=author,
+      author_email=author_email,
+      license=packet_license,
+      packages=["aybasics"],
       python_requires='>=3.7',
       zip_safe=False,
       classifiers=[
-          "Development Status :: Development Status :: 4 - Beta",
+          "Development Status :: 3 - Alpha",
           "Intended Audience :: Information Technology",
           "License :: OSI Approved :: Apache Software License 2.0",
           "Operating System :: OS Independent",
@@ -26,7 +27,6 @@ setup(name='aybasics',
       ],
       # https://pypi.org/pypi?%3Aaction=list_classifiers
       install_requires=[
-          "loguru",
           "numpy",
           "pandas",
           "xmltodict",
