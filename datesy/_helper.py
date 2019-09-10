@@ -19,16 +19,20 @@ def _cast_main_key_name(data):
     if not isinstance(data, dict):
         raise TypeError("Expected type dict, got {}".format(type(data)))
     if len(data.keys()) != 1:
-        raise ValueError("Dict has more than one key. "
-                         "Please provide either the main_element for dicts with more than one entry or "
-                         "provide dict with only one key")
+        raise ValueError(
+            "Dict has more than one key. "
+            "Please provide either the main_element for dicts with more than one entry or "
+            "provide dict with only one key"
+        )
 
     [main_key_name] = data.keys()
     [data] = data.values()
     return data, main_key_name
 
 
-def _create_sorted_list_from_order(order, all_elements=None, main_element=None, main_element_position=None):
+def _create_sorted_list_from_order(
+    order, all_elements=None, main_element=None, main_element_position=None
+):
     """
     Create a sorted list based on the values in order based on the key values.
 
@@ -51,28 +55,45 @@ def _create_sorted_list_from_order(order, all_elements=None, main_element=None, 
     sorted_list : list
         the sorted list with elements from all_elements and main_element
     """
-    if main_element and not main_element_position or not main_element and main_element_position:
-        raise ValueError("either `main_element` and `main_element_position` or none of them are set")
+    if (
+        main_element
+        and not main_element_position
+        or not main_element
+        and main_element_position
+    ):
+        raise ValueError(
+            "either `main_element` and `main_element_position` or none of them are set"
+        )
     if all_elements and not isinstance(all_elements, list):
         try:
             all_elements = list(all_elements)
         except TypeError:
-            raise TypeError("if `all_elements` is set it must be a list or convertible to list."
-                            " {} given".format(type(all_elements)))
+            raise TypeError(
+                "if `all_elements` is set it must be a list or convertible to list."
+                " {} given".format(type(all_elements))
+            )
 
     if isinstance(order, dict):
         if not all(isinstance(order_no, int) for order_no in order.keys()):
             raise ValueError("all keys of order dictionary need to be of type int")
-        if not all(list(order.values())[i] in set(all_elements) for i in range(len(order))):
+        if not all(
+            list(order.values())[i] in set(all_elements) for i in range(len(order))
+        ):
             raise ValueError("some additional keys in order which aren't in all keys")
         if not len(set(order.values())) == len(order):
             raise ValueError("not all order keys unique")
 
         if main_element:
-            if main_element_position in order.keys() and main_element != order[main_element_position]:
+            if (
+                main_element_position in order.keys()
+                and main_element != order[main_element_position]
+            ):
                 raise KeyError(
                     "The main_element_position '{}' is used by another key ('{}') "
-                    "in the order dict!".format(main_element_position, order[main_element_position]))
+                    "in the order dict!".format(
+                        main_element_position, order[main_element_position]
+                    )
+                )
             if main_element not in order.values():
                 order[main_element_position] = main_element
 
@@ -112,6 +133,7 @@ def _dictionize(sub_dict):
 
     """
     from collections import OrderedDict
+
     normalized_dict = dict()
     for key in sub_dict:
         if isinstance(sub_dict[key], OrderedDict):
@@ -132,4 +154,3 @@ def _dictionize(sub_dict):
 
 def _reduce_lists(sub_dict, list_for_reduction, manual_selection, depth_in_list=0):
     raise NotImplemented
-

@@ -44,6 +44,7 @@ def load_single(path):
 
     """
     from xmltodict import parse
+
     with open(path, "r") as f:
         logging.info("loading file_name {}".format(path))
         f = str(f.read())

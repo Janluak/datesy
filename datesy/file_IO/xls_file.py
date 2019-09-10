@@ -1,9 +1,17 @@
 from pandas import read_excel, ExcelFile
 from .file_selection import *
 
-__all__ = ["load_single_sheet", "load_all_sheets", "load_these_sheets", "load_these", "load_all",
-           "write_single_sheet_from_DataFrame", "write_multi_sheet_from_DataFrame", "write_xlsx_single_sheet_from_dict",
-           "write_xlsx_multi_sheet_from_dict_of_dicts"]
+__all__ = [
+    "load_single_sheet",
+    "load_all_sheets",
+    "load_these_sheets",
+    "load_these",
+    "load_all",
+    "write_single_sheet_from_DataFrame",
+    "write_multi_sheet_from_DataFrame",
+    "write_xlsx_single_sheet_from_dict",
+    "write_xlsx_multi_sheet_from_dict_of_dicts",
+]
 
 
 def load_single_sheet(file, sheet=None):
@@ -122,8 +130,11 @@ def __write_xlsx(file_name, data):
 
     """
     from pandas import ExcelWriter, DataFrame
+
     if not isinstance(file_name, str):
-        raise TypeError("file_name needs to be a string. {} given".format(type(file_name)))
+        raise TypeError(
+            "file_name needs to be a string. {} given".format(type(file_name))
+        )
     if not all(isinstance(element[1], DataFrame) for element in data):
         raise TypeError("all handling elements[1] need to be a pandas.DataFrame")
 
@@ -175,13 +186,18 @@ def write_multi_sheet_from_DataFrame(file_name, data_frames, sheet_order=None):
     """
     if sheet_order:
         from .._helper import _create_sorted_list_from_order
-        order = _create_sorted_list_from_order(sheet_order, all_elements=data_frames.keys())
+
+        order = _create_sorted_list_from_order(
+            sheet_order, all_elements=data_frames.keys()
+        )
         __write_xlsx(file_name, [(key, data_frames[key]) for key in order])
     else:
         __write_xlsx(file_name, [(key, data_frames[key]) for key in data_frames])
 
 
-def write_xlsx_single_sheet_from_dict(file_name, data, main_key=None, sheet=None, order=None, inverse=False):
+def write_xlsx_single_sheet_from_dict(
+    file_name, data, main_key=None, sheet=None, order=None, inverse=False
+):
     """
     Save a pandas data_frame to file_name
 
@@ -205,7 +221,9 @@ def write_xlsx_single_sheet_from_dict(file_name, data, main_key=None, sheet=None
     from ..convert import dict_to_pandas_data_frame
 
     data_frame = dict_to_pandas_data_frame(data, False, main_key, order, inverse)
-    write_single_sheet_from_DataFrame(file_name=file_name, data_frame=data_frame, sheet_name=sheet)
+    write_single_sheet_from_DataFrame(
+        file_name=file_name, data_frame=data_frame, sheet_name=sheet
+    )
 
 
 def write_xlsx_multi_sheet_from_dict_of_dicts(file_name, data, order=None):
@@ -225,6 +243,7 @@ def write_xlsx_multi_sheet_from_dict_of_dicts(file_name, data, order=None):
     """
 
     from ..convert import dict_to_pandas_data_frame
+
     data_frames = {key: dict_to_pandas_data_frame(data[key], False) for key in data}
 
     write_multi_sheet_from_DataFrame(file_name, data_frames, order)

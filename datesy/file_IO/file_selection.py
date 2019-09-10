@@ -1,7 +1,9 @@
 import logging, os, glob, re
 
 
-def return_file_list_if_path(path, file_ending=None, pattern=None, regex=None, return_always_list=False):
+def return_file_list_if_path(
+    path, file_ending=None, pattern=None, regex=None, return_always_list=False
+):
     """
     Return all files in directory (optionally matching the options) if path is a directory
 
@@ -56,9 +58,15 @@ def check_file_name_ending(file_name, ending):
     """
     # input type check
     if not isinstance(file_name, str):
-        raise TypeError("file_name needs to be string, {} provided".format(type(file_name)))
+        raise TypeError(
+            "file_name needs to be string, {} provided".format(type(file_name))
+        )
     if not isinstance(ending, (str, list)):
-        raise TypeError("ending needs to be either a list or a string, {} provided".format(type(ending)))
+        raise TypeError(
+            "ending needs to be either a list or a string, {} provided".format(
+                type(ending)
+            )
+        )
 
     # check if multiple endings got provided
     if not isinstance(ending, list):
@@ -98,11 +106,19 @@ def get_file_list_from_directory(directory, file_ending=None, pattern=None, rege
     """
     # input type check
     if not isinstance(directory, str):
-        raise TypeError("file_name needs to be string, {} provided".format(type(directory)))
+        raise TypeError(
+            "file_name needs to be string, {} provided".format(type(directory))
+        )
     if pattern and regex or file_ending and regex:
-        raise ValueError("`regex` may only be specified alone and not together with `file_ending` or `pattern`")
+        raise ValueError(
+            "`regex` may only be specified alone and not together with `file_ending` or `pattern`"
+        )
     if file_ending and not isinstance(file_ending, (str, list)):
-        raise TypeError("ending needs to be either a list or a string, {} provided".format(type(file_ending)))
+        raise TypeError(
+            "ending needs to be either a list or a string, {} provided".format(
+                type(file_ending)
+            )
+        )
     if pattern and not isinstance(pattern, str):
         raise TypeError("pattern needs to be string, {} provided".format(type(pattern)))
     if regex and not isinstance(regex, str):
@@ -116,7 +132,7 @@ def get_file_list_from_directory(directory, file_ending=None, pattern=None, rege
 
     # get list of files from directory
     if pattern:
-        if "." not in pattern:                              # if no file_name ending was specified in `pattern`
+        if "." not in pattern:  # if no file_name ending was specified in `pattern`
             files = glob.glob(directory + pattern + ".*")
         else:
             files = glob.glob(directory + pattern)
@@ -141,7 +157,9 @@ def get_file_list_from_directory(directory, file_ending=None, pattern=None, rege
     return files
 
 
-def get_latest_file_from_directory(directory, file_ending=None, pattern=None, regex=None):
+def get_latest_file_from_directory(
+    directory, file_ending=None, pattern=None, regex=None
+):
     """
     Return the latest file_name (optionally filtered) from directory
 

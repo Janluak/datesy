@@ -44,6 +44,7 @@ def load_single(path):
 
     """
     from json import load
+
     with open(path, "r") as f:
         logging.info("loading file_name {}".format(path))
         return load(f)
@@ -86,10 +87,15 @@ def write(file, data):
         file += ".json"
 
     if not check_file_name_ending(file, "json"):
-        logging.warning("file_name ending {} different to standard ({})".format(file.split(".")[-1], "json"))
+        logging.warning(
+            "file_name ending {} different to standard ({})".format(
+                file.split(".")[-1], "json"
+            )
+        )
 
     logging.info("saving to file_name: {}".format(file))
 
     from json import dump
-    with open(file, 'w') as fp:
+
+    with open(file, "w") as fp:
         dump(data, fp)

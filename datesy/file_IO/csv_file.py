@@ -3,7 +3,14 @@ from .._helper import _cast_main_key_name
 import csv
 
 
-__all__ = ["load", "load_all", "load_single", "load_these", "write_from_rows", "write_from_dict"]
+__all__ = [
+    "load",
+    "load_all",
+    "load_single",
+    "load_these",
+    "write_from_rows",
+    "write_from_dict",
+]
 
 
 def _register_csv_dialect(**kwargs):
@@ -18,8 +25,11 @@ def _register_csv_dialect(**kwargs):
     """
     csv_dialect_options = {i for i in set(dir(csv.Dialect)) if "__" not in i}
     if not all(key in csv_dialect_options for key in kwargs.keys()):
-        raise KeyError("only these keys for csv dialect are allowed: {}\nGiven keys: {}".format(csv_dialect_options,
-                                                                                                kwargs.keys()))
+        raise KeyError(
+            "only these keys for csv dialect are allowed: {}\nGiven keys: {}".format(
+                csv_dialect_options, kwargs.keys()
+            )
+        )
     csv.register_dialect("custom", **kwargs)
 
 
@@ -130,7 +140,11 @@ def write_from_rows(file, rows, **kwargs):
         dialect = "unix"
 
     if not check_file_name_ending(file, ["csv", "tsv"]):
-        logging.warning("file_name ending {} different to standard ({})".format(file.split(".")[-1], ["csv", "tsv"]))
+        logging.warning(
+            "file_name ending {} different to standard ({})".format(
+                file.split(".")[-1], ["csv", "tsv"]
+            )
+        )
 
     with open(file, "w") as fw:
         w = csv.writer(fw, dialect=dialect)
@@ -138,7 +152,15 @@ def write_from_rows(file, rows, **kwargs):
             w.writerow(row)
 
 
-def write_from_dict(file, data, main_key=None, order=None, if_empty_value=None, main_key_position=0, **kwargs):
+def write_from_dict(
+    file,
+    data,
+    main_key=None,
+    order=None,
+    if_empty_value=None,
+    main_key_position=0,
+    **kwargs
+):
     """
     Save a row based document from dict to file_name
 
@@ -164,18 +186,40 @@ def write_from_dict(file, data, main_key=None, order=None, if_empty_value=None, 
         data, main_key = _cast_main_key_name(data)
 
     from ..convert import dict_to_rows
-    rows = dict_to_rows(data=data, main_key=main_key, main_key_position=main_key_position,
-                        if_empty_value=if_empty_value, order=order)
+
+    rows = dict_to_rows(
+        data=data,
+        main_key=main_key,
+        main_key_position=main_key_position,
+        if_empty_value=if_empty_value,
+        order=order,
+    )
     write_from_rows(file, rows, **kwargs)
 
 
-def write(file, data, main_key=None, order=None, if_empty_value=None, main_key_position=0, **kwargs):
+def write(
+    file,
+    data,
+    main_key=None,
+    order=None,
+    if_empty_value=None,
+    main_key_position=0,
+    **kwargs
+):
     if isinstance(data, list):
         if main_key or order or if_empty_value or main_key_position:
-            raise ValueError("if row of rows used, main_key, order, "
-                             "if_empty_value and main_key_position must not be set")
+            raise ValueError(
+                "if row of rows used, main_key, order, "
+                "if_empty_value and main_key_position must not be set"
+            )
         write_from_rows(file, data, **kwargs)
     elif isinstance(data, dict):
-        write_from_dict(file, data, main_key, order, if_empty_value, main_key_position, **kwargs)
+        write_from_dict(
+            file, data, main_key, order, if_empty_value, main_key_position, **kwargs
+        )
     else:
-        raise TypeError("wrong type for `handling`. only list or dict are allowed, {} given".format(type(data)))
+        raise TypeError(
+            "wrong type for `handling`. only list or dict are allowed, {} given".format(
+                type(data)
+            )
+        )

@@ -19,7 +19,7 @@ def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=Non
     data = dict()
     header = rows[header_line]
 
-    for row in rows[header_line + 1:]:
+    for row in rows[header_line + 1 :]:
 
         if null_value == "delete":
             data[row[main_key_position]] = {
@@ -30,8 +30,7 @@ def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=Non
 
         else:
             data[row[main_key_position]] = {
-                header[i]: row[i]
-                if row[i] else null_value
+                header[i]: row[i] if row[i] else null_value
                 for i in range(len(header))
                 if i != main_key_position
             }
@@ -42,7 +41,9 @@ def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=Non
     return data
 
 
-def dict_to_rows(data, main_key=None, main_key_position=0, if_empty_value=None, order=None):
+def dict_to_rows(
+    data, main_key=None, main_key_position=0, if_empty_value=None, order=None
+):
     """
     Convert a dictionary to rows
 
@@ -62,6 +63,7 @@ def dict_to_rows(data, main_key=None, main_key_position=0, if_empty_value=None, 
     """
     if not main_key:
         from ._helper import _cast_main_key_name
+
         data, main_key = _cast_main_key_name(data)
 
     header_keys = set()
@@ -70,31 +72,44 @@ def dict_to_rows(data, main_key=None, main_key_position=0, if_empty_value=None, 
             for key in data[main_key].keys():
                 header_keys.add(key)
     except AttributeError:
-        raise ValueError("JSON/dictionary is not formatted suitable for neat csv conversion. "
-                         "{main_element: {key: {value_key: value}}} expected")
+        raise ValueError(
+            "JSON/dictionary is not formatted suitable for neat csv conversion. "
+            "{main_element: {key: {value_key: value}}} expected"
+        )
 
     if not order:
         header = list(header_keys)
-        header.insert(main_key_position, main_key)  # put the json_key to position in csv
+        header.insert(
+            main_key_position, main_key
+        )  # put the json_key to position in csv
     else:
         from ._helper import _create_sorted_list_from_order
-        header = _create_sorted_list_from_order(all_elements=header_keys, order=order,
-                                                main_element=main_key, main_element_position=main_key_position)
+
+        header = _create_sorted_list_from_order(
+            all_elements=header_keys,
+            order=order,
+            main_element=main_key,
+            main_element_position=main_key_position,
+        )
 
     header_without_ordered_keys = header.copy()
     header_without_ordered_keys.remove(main_key)
     rows = [header]
 
     for element in data:
-        row = [data[element][key] if key in data[element] else if_empty_value
-               for key in header_without_ordered_keys]
+        row = [
+            data[element][key] if key in data[element] else if_empty_value
+            for key in header_without_ordered_keys
+        ]
         row.insert(main_key_position, element)
         rows.append(row)
 
     return rows
 
 
-def dict_to_pandas_data_frame(data, data_as_index=False, main_key=None, order=None, inverse=False):
+def dict_to_pandas_data_frame(
+    data, data_as_index=False, main_key=None, order=None, inverse=False
+):
     """
     Convert a dictionary to pandas.DataFrame
 
@@ -127,6 +142,7 @@ def dict_to_pandas_data_frame(data, data_as_index=False, main_key=None, order=No
 
     from ._helper import _create_sorted_list_from_order, _cast_main_key_name
     from pandas import DataFrame
+
     if not main_key:
         data, main_key = _cast_main_key_name(data)
 
@@ -153,7 +169,9 @@ def dict_to_pandas_data_frame(data, data_as_index=False, main_key=None, order=No
     return data_frame
 
 
-def pandas_data_frame_to_dict(data_frame, main_key_position=0, null_value="delete", header_line=0):
+def pandas_data_frame_to_dict(
+    data_frame, main_key_position=0, null_value="delete", header_line=0
+):
     """
     Converts a single file_name from xlsx to json
 
@@ -227,6 +245,3 @@ def xml_to_dict(ordered_data, list_reduction, manual_selection):
         data = _reduce_lists(data, list_reduction, manual_selection)
 
     return data
-
-
-

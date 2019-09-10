@@ -1,6 +1,6 @@
 __author__ = "Jan Lukas Braje"
 __copyright__ = "Copyright (C) 2019 Jan Lukas Braje"
-__versions__ = "0.6.10"        # versioneer
+__versions__ = "0.6.10"  # versioneer
 
 from .convert import *
 from .inspect import *
@@ -12,5 +12,3 @@ load_json = json_file.load
 load_csv = csv_file.load
 write_json = json_file.write
 write_csv = csv_file.write
-
-

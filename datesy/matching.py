@@ -11,9 +11,17 @@ def _check_for_unique_similarity(simi, value, dict_entry):
         dict_entry[simi] = value
 
 
-def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False, auto_match_all=True,
-                  print_auto_match=False, single_match_only=True, enforce_comprehensive_check=False,
-                  minimal_distance_for_automatic_matching=0.1, similarity_limit_for_manual_checking=0.6):
+def match_similar(
+    list_for_matching,
+    list_to_be_matched_to,
+    simplify_with=False,
+    auto_match_all=True,
+    print_auto_match=False,
+    single_match_only=True,
+    enforce_comprehensive_check=False,
+    minimal_distance_for_automatic_matching=0.1,
+    similarity_limit_for_manual_checking=0.6,
+):
     """
     Returns a dictionary with #!list_a as keys and #!list_b as values based on most similarity.     # Imperativ ein Satz!
     Matching twice to the same value is possible!
@@ -53,15 +61,21 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
 
     """
     if len(set(list_for_matching)) != len(list_for_matching):
-        raise ValueError("multiple strings with same value! please provide unique set of strings!")
+        raise ValueError(
+            "multiple strings with same value! please provide unique set of strings!"
+        )
 
     if single_match_only:
         if len(set(list_for_matching)) != len(list_for_matching):
-            raise ValueError("multiple strings with same value! "
-                             "please provide unique set of strings for list_for_matching!")
+            raise ValueError(
+                "multiple strings with same value! "
+                "please provide unique set of strings for list_for_matching!"
+            )
         if len(set(list_to_be_matched_to)) != len(list_to_be_matched_to):
-            raise ValueError("multiple strings with same value! "
-                             "please provide unique set of strings for list_to_be_matched_to!")
+            raise ValueError(
+                "multiple strings with same value! "
+                "please provide unique set of strings for list_to_be_matched_to!"
+            )
     else:
         raise NotImplemented
 
@@ -70,14 +84,18 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
         if simplify_with not in ["capital", "separators", "all"]:
             separators = "".join(simplify_with)
         else:
-            separators = '[_, | \n \' & " % \\ * -]'
+            separators = "[_, | \n ' & \" % \\ * -]"
         dict_for_matching = dict()
         dict_to_be_matched_to = dict()
         if simplify_with not in ["all", "separators"]:
             dict_for_matching = {value.lower(): value for value in list_for_matching}
             list_for_matching = [value.lower() for value in list_for_matching.copy()]
-            dict_to_be_matched_to = {value.lower(): value for value in list_to_be_matched_to}
-            list_to_be_matched_to = [value.lower() for value in list_to_be_matched_to.copy()]
+            dict_to_be_matched_to = {
+                value.lower(): value for value in list_to_be_matched_to
+            }
+            list_to_be_matched_to = [
+                value.lower() for value in list_to_be_matched_to.copy()
+            ]
         elif simplify_with != "capital":
             for entry_a in list_for_matching:
                 dict_for_matching["".join(re.split(separators, entry_a))] = entry_a
@@ -123,23 +141,35 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
         if not enforce_comprehensive_check:
             for entry_a in list_for_matching.copy():
                 try:
-                    match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                    match[entry_a] = most_similar[entry_a][
+                        ordered_most_similar[entry_a][0]
+                    ]
                     list_for_matching.remove(entry_a)
-                    if isinstance(most_similar[entry_a][ordered_most_similar[entry_a][0]], list):
-                        most_similar_list = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                    if isinstance(
+                        most_similar[entry_a][ordered_most_similar[entry_a][0]], list
+                    ):
+                        most_similar_list = most_similar[entry_a][
+                            ordered_most_similar[entry_a][0]
+                        ]
                         while most_similar_list:
                             list_to_be_matched_to.remove(most_similar_list[0])
                             most_similar_list = most_similar_list[1:]
                     else:
-                        list_to_be_matched_to.remove(most_similar[entry_a][ordered_most_similar[entry_a][0]])
+                        list_to_be_matched_to.remove(
+                            most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                        )
                     if print_auto_match:
-                        print("automatically matched: {} - {}".format(entry_a,
-                                                                      most_similar[entry_a][
-                                                                          ordered_most_similar[entry_a][0]]))
+                        print(
+                            "automatically matched: {} - {}".format(
+                                entry_a,
+                                most_similar[entry_a][ordered_most_similar[entry_a][0]],
+                            )
+                        )
                 except IndexError:
                     pass
         else:
             from pandas import DataFrame
+
             similarities = list()
             entries_a = list()
             entries_b = list()
@@ -148,14 +178,24 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
                     similarities.append(similarity)
                     entries_a.append(match_set[0])
                     entries_b.append(match_set[1])
-            df = DataFrame({"similarity": similarities, "entry_a": entries_a, "entry_b": entries_b},
-                           columns=["similarity", "entry_a", "entry_b"])
+            df = DataFrame(
+                {
+                    "similarity": similarities,
+                    "entry_a": entries_a,
+                    "entry_b": entries_b,
+                },
+                columns=["similarity", "entry_a", "entry_b"],
+            )
             old_length = 0
 
             while len(df.similarity) != 0 and len(df.similarity) != old_length:
                 old_length = len(df.similarity)
                 highest_similarity = df.similarity[0]
-                if len(df.similarity) > 1 and highest_similarity != df.similarity[1] or len(df.similarity) == 0:
+                if (
+                    len(df.similarity) > 1
+                    and highest_similarity != df.similarity[1]
+                    or len(df.similarity) == 0
+                ):
                     entry_a = df.entry_a[0]
                     entry_b = df.entry_b[0]
                     match[entry_a] = entry_b
@@ -229,74 +269,157 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
 
     # human interfering matching #
     else:
-        print("If first matches, press enter. If a number matches, press number and enter."
-              " If none match, press 'n' and enter")
+        print(
+            "If first matches, press enter. If a number matches, press number and enter."
+            " If none match, press 'n' and enter"
+        )
         for entry_a in list_for_matching:
             if not most_similar[entry_a]:
                 pass
             else:
                 try:
-                    if (len(ordered_most_similar[entry_a]) == 1 and ordered_most_similar[entry_a][0] >
-                        (1 - minimal_distance_for_automatic_matching)) \
-                            or (len(ordered_most_similar[entry_a]) > 1 and
-                                (ordered_most_similar[entry_a][0] - ordered_most_similar[entry_a][1])
-                                > minimal_distance_for_automatic_matching):
+                    if (
+                        len(ordered_most_similar[entry_a]) == 1
+                        and ordered_most_similar[entry_a][0]
+                        > (1 - minimal_distance_for_automatic_matching)
+                    ) or (
+                        len(ordered_most_similar[entry_a]) > 1
+                        and (
+                            ordered_most_similar[entry_a][0]
+                            - ordered_most_similar[entry_a][1]
+                        )
+                        > minimal_distance_for_automatic_matching
+                    ):
 
                         if print_auto_match:
-                            print("automatically matched: {} - {}".format(entry_a, most_similar[entry_a][
-                                ordered_most_similar[entry_a][0]]))
-                        match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                            print(
+                                "automatically matched: {} - {}".format(
+                                    entry_a,
+                                    most_similar[entry_a][
+                                        ordered_most_similar[entry_a][0]
+                                    ],
+                                )
+                            )
+                        match[entry_a] = most_similar[entry_a][
+                            ordered_most_similar[entry_a][0]
+                        ]
 
                 except IndexError:
                     pass
 
                 if entry_a not in match:
                     try:
-                        _, columns = os.popen('stty size', 'r').read().split()
+                        _, columns = os.popen("stty size", "r").read().split()
                         window_width = int(columns)
                     except ValueError:
                         window_width = 200
 
-                    largest_string = len(str(max(list(most_similar[entry_a].values()) + [entry_a], key=len)))
+                    largest_string = len(
+                        str(
+                            max(
+                                list(most_similar[entry_a].values()) + [entry_a],
+                                key=len,
+                            )
+                        )
+                    )
                     minimal_string = 13
                     max_number_to_show = int(window_width / (largest_string + 3))
                     if max_number_to_show > int(window_width / minimal_string):
                         max_number_to_show = int(window_width / minimal_string)
-                    characters = largest_string if largest_string > minimal_string - 5 else minimal_string - 5
+                    characters = (
+                        largest_string
+                        if largest_string > minimal_string - 5
+                        else minimal_string - 5
+                    )
 
-                    print("".join(["{}{}:  {:2.1f}% |".format("".join([" " for i in range(largest_string - 8)]), n,
-                                                              round(ordered_most_similar[entry_a][n], 3) * 100)
-                                   for n in range(len(ordered_most_similar[entry_a][:max_number_to_show]))]))
+                    print(
+                        "".join(
+                            [
+                                "{}{}:  {:2.1f}% |".format(
+                                    "".join([" " for i in range(largest_string - 8)]),
+                                    n,
+                                    round(ordered_most_similar[entry_a][n], 3) * 100,
+                                )
+                                for n in range(
+                                    len(
+                                        ordered_most_similar[entry_a][
+                                            :max_number_to_show
+                                        ]
+                                    )
+                                )
+                            ]
+                        )
+                    )
 
-                    number_to_show = max_number_to_show if max_number_to_show < len(ordered_most_similar[entry_a]) \
+                    number_to_show = (
+                        max_number_to_show
+                        if max_number_to_show < len(ordered_most_similar[entry_a])
                         else len(ordered_most_similar[entry_a])
-                    print("".join([" {:>{}} |".format(entry_a, characters) for i in range(number_to_show)]))
-                    print("".join([" {:>{}} |".format(most_similar[entry_a][ordered_most_similar[entry_a][n]],
-                                                      characters) for n in range(number_to_show)]))
+                    )
+                    print(
+                        "".join(
+                            [
+                                " {:>{}} |".format(entry_a, characters)
+                                for i in range(number_to_show)
+                            ]
+                        )
+                    )
+                    print(
+                        "".join(
+                            [
+                                " {:>{}} |".format(
+                                    most_similar[entry_a][
+                                        ordered_most_similar[entry_a][n]
+                                    ],
+                                    characters,
+                                )
+                                for n in range(number_to_show)
+                            ]
+                        )
+                    )
 
                     answer = input("match? ")
                     if answer == "":
-                        match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][0]]
+                        match[entry_a] = most_similar[entry_a][
+                            ordered_most_similar[entry_a][0]
+                        ]
 
                     else:
                         try:
-                            match[entry_a] = most_similar[entry_a][ordered_most_similar[entry_a][int(answer)]]
+                            match[entry_a] = most_similar[entry_a][
+                                ordered_most_similar[entry_a][int(answer)]
+                            ]
                         except ValueError:
                             try:
-                                generator = (print("{}: {:1.3f} | {} - {}: fit? ".
-                                                   format(n + number_to_show,
-                                                          round(ordered_most_similar[entry_a][n + number_to_show],
-                                                                3),
-                                                          entry_a,
-                                                          most_similar[entry_a][
-                                                              ordered_most_similar[entry_a][n + number_to_show]]))
-                                             for n in range(len(ordered_most_similar[entry_a])))
+                                generator = (
+                                    print(
+                                        "{}: {:1.3f} | {} - {}: fit? ".format(
+                                            n + number_to_show,
+                                            round(
+                                                ordered_most_similar[entry_a][
+                                                    n + number_to_show
+                                                ],
+                                                3,
+                                            ),
+                                            entry_a,
+                                            most_similar[entry_a][
+                                                ordered_most_similar[entry_a][
+                                                    n + number_to_show
+                                                ]
+                                            ],
+                                        )
+                                    )
+                                    for n in range(len(ordered_most_similar[entry_a]))
+                                )
 
                                 for _ in generator:
                                     result = input("match? ")
                                     if result == "":
                                         match[entry_a] = most_similar[entry_a][
-                                            ordered_most_similar[entry_a][number_to_show]]
+                                            ordered_most_similar[entry_a][
+                                                number_to_show
+                                            ]
+                                        ]
                                         break
                                     else:
                                         number_to_show += 1
@@ -305,12 +428,18 @@ def match_similar(list_for_matching, list_to_be_matched_to, simplify_with=False,
 
             if entry_a not in match:
                 no_match.append(entry_a)
-                logging.warning('no similarity for "{}" above {}% similarity'.
-                               format(entry_a, similarity_limit_for_manual_checking * 100))
+                logging.warning(
+                    'no similarity for "{}" above {}% similarity'.format(
+                        entry_a, similarity_limit_for_manual_checking * 100
+                    )
+                )
 
     # translating back to the original values #
     if simplify_with:
-        match = {dict_for_matching[key]: dict_to_be_matched_to[match[key]] for key in match.keys()}
+        match = {
+            dict_for_matching[key]: dict_to_be_matched_to[match[key]]
+            for key in match.keys()
+        }
         no_match = {dict_for_matching[key] for key in no_match}
 
     return match, no_match
