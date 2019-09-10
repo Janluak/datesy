@@ -1,10 +1,11 @@
 __author__ = "Jan Lukas Braje"
 __copyright__ = "Copyright (C) 2019 Jan Lukas Braje"
-__versions__ = "0.9"        # versioneer
+__versions__ = "0.6.9"        # versioneer
 
-from datesy.convert import *
-from datesy.inspect import *
-from datesy.file_IO import *
+from .convert import *
+from .inspect import *
+from .matching import *
+from .file_IO import *
 
 # shortcuts
 load_json = json_file.load
