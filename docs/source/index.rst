@@ -7,8 +7,6 @@ Welcome to datesy's documentation!
 ==================================
 
 .. toctree::
-   :maxdepth: 3
-   :caption: Contents:
 
  intro
  datesy
