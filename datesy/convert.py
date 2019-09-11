@@ -1,4 +1,4 @@
-def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=None):
+def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0):
     """
     Converts a single file_name from csv to json
 
@@ -22,11 +22,14 @@ def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=Non
     for row in rows[header_line + 1 :]:
 
         if null_value == "delete":
-            data[row[main_key_position]] = {
-                header[i]: row[i]
-                for i in range(len(header))
-                if row[i] and i != main_key_position
-            }
+            try:
+                data[row[main_key_position]] = {
+                    header[i]: row[i]
+                    for i in range(len(header))
+                    if row[i] and i != main_key_position
+                }
+            except IndexError:
+                raise IndexError("not all elements are the same length")
 
         else:
             data[row[main_key_position]] = {
