@@ -19,7 +19,7 @@ def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0):
     data = dict()
     header = rows[header_line]
 
-    for row in rows[header_line + 1 :]:
+    for row in rows[header_line + 1:]:
 
         if null_value == "delete":
             try:

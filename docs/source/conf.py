@@ -26,7 +26,7 @@ copyright = "2019, Jan Lukas Braje"
 author = "Jan Lukas Braje"
 
 # The full version, including alpha/beta/rc tags
-release = "0.6.10"
+release = "0.6.11"
 
 
 # -- General configuration ---------------------------------------------------
