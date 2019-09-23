@@ -1,6 +1,6 @@
 def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0):
     """
-    Converts a single file_name from csv to json
+    Convert a row of rows (e.g. csv) to dictionary
 
     Parameters
     ----------
@@ -60,7 +60,7 @@ def dict_to_rows(
 
     Returns
     -------
-    rows : list(lists)
+    list(lists)
         list of rows representing the csv based on the `main_element_position`
 
     """
@@ -131,7 +131,8 @@ def dict_to_pandas_data_frame(
 
     Returns
     -------
-    data_frame : pandas.DataFrame
+    pandas.DataFrame
+        DataFrame representing the dictionary
 
     """
     if not isinstance(data, dict):
@@ -187,7 +188,7 @@ def pandas_data_frame_to_dict(
 
     Returns
     -------
-    handling : dict
+    dict
         the dictionary representing the xlsx based on `main_key_position`
     """
     from pandas import notnull
@@ -231,7 +232,7 @@ def xml_to_dict(ordered_data, list_reduction, manual_selection):
 
     Returns
     -------
-    handling : dict
+    dict
         the normalized dictionary
 
     """
