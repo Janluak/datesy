@@ -195,7 +195,9 @@ def pandas_data_frame_to_dict(
     if header_line == 0:
         header = list(data_frame.keys())
     else:
-        raise NotImplemented
+        header = list(data_frame.iloc[header_line - 1])
+        data_frame = data_frame[header_line:]
+        data_frame.columns = header
 
     # set null_values
     if null_value == "delete":
@@ -210,7 +212,7 @@ def pandas_data_frame_to_dict(
         for key2 in data[key].copy():
             if not data[key][key2] and null_value == "delete":
                 del data[key][key2]
-    data = {header[0]: data}
+    data = {header[main_key_position]: data}
 
     return data
 
