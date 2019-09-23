@@ -15,9 +15,7 @@ import sys
 import sphinx.ext.autodoc
 import sphinx.ext.napoleon
 
-import datesy
-
-# sys.path.insert(0, os.path.abspath("../../datesy"))
+sys.path.insert(0, os.path.abspath("../../datesy"))
 # autodoc_mock_imports = ["datesy"]
 
 
