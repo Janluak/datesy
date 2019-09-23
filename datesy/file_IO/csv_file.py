@@ -155,7 +155,7 @@ def write_from_rows(file, rows, **kwargs):
 def write_from_dict(
     file,
     data,
-    main_key=None,
+    main_key_name=None,
     order=None,
     if_empty_value=None,
     main_key_position=0,
@@ -170,7 +170,7 @@ def write_from_dict(
         the file_name to save under. if no ending is provided, saved as .csv
     data : dict
         the dictionary to be saved as json
-    main_key : str
+    main_key_name : str
         if the json or dict does not have the main key as a single {main_element : dict} present, it needs to be specified
     order : dict {int: str}
         for defining a specific order of the keys
@@ -182,14 +182,14 @@ def write_from_dict(
         csv dialect options
 
     """
-    if not main_key:
-        data, main_key = _cast_main_key_name(data)
+    if not main_key_name:
+        data, main_key_name = _cast_main_key_name(data)
 
     from ..convert import dict_to_rows
 
     rows = dict_to_rows(
         data=data,
-        main_key=main_key,
+        main_key_name=main_key_name,
         main_key_position=main_key_position,
         if_empty_value=if_empty_value,
         order=order,
@@ -200,22 +200,22 @@ def write_from_dict(
 def write(
     file,
     data,
-    main_key=None,
+    main_key_name=None,
     order=None,
     if_empty_value=None,
     main_key_position=0,
     **kwargs
 ):
     if isinstance(data, list):
-        if main_key or order or if_empty_value or main_key_position:
+        if main_key_name or order or if_empty_value or main_key_position:
             raise ValueError(
-                "if row of rows used, main_key, order, "
+                "if row of rows used, main_key_name, order, "
                 "if_empty_value and main_key_position must not be set"
             )
         write_from_rows(file, data, **kwargs)
     elif isinstance(data, dict):
         write_from_dict(
-            file, data, main_key, order, if_empty_value, main_key_position, **kwargs
+            file, data, main_key_name, order, if_empty_value, main_key_position, **kwargs
         )
     else:
         raise TypeError(

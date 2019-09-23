@@ -1,4 +1,4 @@
-def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0):
+def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0, contains_open_ends=False):
     """
     Convert a row of rows (e.g. csv) to dictionary
 
@@ -8,6 +8,8 @@ def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0):
     main_key_position : int, optional
     null_value : any, optional
     header_line : int, optional
+    contains_open_ends : bool, optional
+        if each row is not in the same length due to last set entry as last element in row
 
     Returns
     -------
@@ -15,29 +17,27 @@ def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0):
         dictionary containing the information from csv
 
     """
-    rows_no = 0
     data = dict()
     header = rows[header_line]
 
     for row in rows[header_line + 1:]:
+        sub_data = dict()
+        for i in range(len(header)):
+            if i == main_key_position:
+                continue
+            elif i >= len(row):
+                if not contains_open_ends:
+                    raise IndexError("not all elements are the same length")
+                elif null_value != "delete":
+                    sub_data[header[i]] = null_value
+            elif not row[i] and null_value != "delete":
+                sub_data[header[i]] = null_value
+            elif not row[i]:
+                continue
+            else:
+                sub_data[header[i]] = row[i]
 
-        if null_value == "delete":
-            try:
-                data[row[main_key_position]] = {
-                    header[i]: row[i]
-                    for i in range(len(header))
-                    if row[i] and i != main_key_position
-                }
-            except IndexError:
-                raise IndexError("not all elements are the same length")
-
-        else:
-            data[row[main_key_position]] = {
-                header[i]: row[i] if row[i] else null_value
-                for i in range(len(header))
-                if i != main_key_position
-            }
-        rows_no += 1
+        data[row[main_key_position]] = sub_data
 
     data = {header[main_key_position]: data}
 
@@ -45,7 +45,7 @@ def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0):
 
 
 def dict_to_rows(
-    data, main_key=None, main_key_position=0, if_empty_value=None, order=None
+    data, main_key_name=None, main_key_position=0, if_empty_value=None, order=None
 ):
     """
     Convert a dictionary to rows
@@ -53,7 +53,7 @@ def dict_to_rows(
     Parameters
     ----------
     data : dict
-    main_key : str, optional
+    main_key_name : str, optional
     main_key_position : int, optional
     if_empty_value : any, optional
     order : dict, None, optional
@@ -64,10 +64,10 @@ def dict_to_rows(
         list of rows representing the csv based on the `main_element_position`
 
     """
-    if not main_key:
+    if not main_key_name:
         from ._helper import _cast_main_key_name
 
-        data, main_key = _cast_main_key_name(data)
+        data, main_key_name = _cast_main_key_name(data)
 
     header_keys = set()
     try:
@@ -83,7 +83,7 @@ def dict_to_rows(
     if not order:
         header = list(header_keys)
         header.insert(
-            main_key_position, main_key
+            main_key_position, main_key_name
         )  # put the json_key to position in csv
     else:
         from ._helper import _create_sorted_list_from_order
@@ -91,12 +91,12 @@ def dict_to_rows(
         header = _create_sorted_list_from_order(
             all_elements=header_keys,
             order=order,
-            main_element=main_key,
+            main_element=main_key_name,
             main_element_position=main_key_position,
         )
 
     header_without_ordered_keys = header.copy()
-    header_without_ordered_keys.remove(main_key)
+    header_without_ordered_keys.remove(main_key_name)
     rows = [header]
 
     for element in data:
@@ -111,7 +111,7 @@ def dict_to_rows(
 
 
 def dict_to_pandas_data_frame(
-    data, data_as_index=False, main_key=None, order=None, inverse=False
+    data, data_as_index=False, main_key_name=None, order=None, inverse=False
 ):
     """
     Convert a dictionary to pandas.DataFrame
@@ -122,7 +122,7 @@ def dict_to_pandas_data_frame(
         dictionary of handling
     data_as_index : bool, optional
         if the first column shall be used as index column
-    main_key : str, optional
+    main_key_name : str, optional
         if the json or dict does not have the main key as a single `{main_element : dict}` present, it needs to be specified
     order : dict, list, optional
         list with the column names in order or dict with specified key positions
@@ -139,7 +139,7 @@ def dict_to_pandas_data_frame(
         raise TypeError
     if not isinstance(data_as_index, bool):
         raise TypeError
-    if main_key and not isinstance(main_key, str):
+    if main_key_name and not isinstance(main_key_name, str):
         raise TypeError
     if not isinstance(inverse, bool):
         raise TypeError
@@ -147,7 +147,7 @@ def dict_to_pandas_data_frame(
     from ._helper import _create_sorted_list_from_order, _cast_main_key_name
     from pandas import DataFrame
 
-    if not main_key:
+    if not main_key_name:
         data, main_key = _cast_main_key_name(data)
 
     if not order:
@@ -165,10 +165,10 @@ def dict_to_pandas_data_frame(
             data_frame = DataFrame.from_dict(data, columns=order)
 
     if data_as_index:
-        data_frame[main_key] = data_frame.index
+        data_frame[main_key_name] = data_frame.index
         data_frame.set_index(order[0], inplace=True)
 
-    data_frame.index.name = main_key
+    data_frame.index.name = main_key_name
 
     return data_frame
 
