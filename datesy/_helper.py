@@ -58,12 +58,17 @@ def _create_sorted_list_from_order(
     if (
         main_element
         and not main_element_position
+        and main_element_position != 0
         or not main_element
         and main_element_position
     ):
-        raise ValueError(
-            "either `main_element` and `main_element_position` or none of them are set"
-        )
+        if main_element and main_element not in order:
+            raise ValueError(
+                "`main_element` defined but neither in `order` nor defined with `main_element_position`"
+            )
+        else:
+            raise ValueError("`main_element_position` without `main_element` set")
+
     if all_elements and not isinstance(all_elements, list):
         try:
             all_elements = list(all_elements)

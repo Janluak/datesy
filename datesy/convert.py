@@ -1,4 +1,10 @@
-def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0, contains_open_ends=False):
+def rows_to_dict(
+    rows,
+    main_key_position=0,
+    null_value="delete",
+    header_line=0,
+    contains_open_ends=False,
+):
     """
     Convert a row of rows (e.g. csv) to dictionary
 
@@ -20,7 +26,7 @@ def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0, 
     data = dict()
     header = rows[header_line]
 
-    for row in rows[header_line + 1:]:
+    for row in rows[header_line + 1 :]:
         sub_data = dict()
         for i in range(len(header)):
             if i == main_key_position:
@@ -45,7 +51,7 @@ def rows_to_dict(rows, main_key_position=0, null_value="delete", header_line=0, 
 
 
 def dict_to_rows(
-    data, main_key_name=None, main_key_position=0, if_empty_value=None, order=None
+    data, main_key_name=None, main_key_position=None, if_empty_value=None, order=None
 ):
     """
     Convert a dictionary to rows
@@ -83,7 +89,7 @@ def dict_to_rows(
     if not order:
         header = list(header_keys)
         header.insert(
-            main_key_position, main_key_name
+            main_key_position if main_key_position else 0, main_key_name
         )  # put the json_key to position in csv
     else:
         from ._helper import _create_sorted_list_from_order
@@ -104,7 +110,7 @@ def dict_to_rows(
             data[element][key] if key in data[element] else if_empty_value
             for key in header_without_ordered_keys
         ]
-        row.insert(main_key_position, element)
+        row.insert(main_key_position if main_key_position else 0, element)
         rows.append(row)
 
     return rows
