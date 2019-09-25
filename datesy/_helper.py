@@ -79,12 +79,16 @@ def _create_sorted_list_from_order(
             )
 
     if isinstance(order, dict):
+        all_elements = set(all_elements)
+        if main_element:
+            all_elements.add(main_element)
         if not all(isinstance(order_no, int) for order_no in order.keys()):
             raise ValueError("all keys of order dictionary need to be of type int")
-        if not all(
-            list(order.values())[i] in set(all_elements) for i in range(len(order))
-        ):
-            raise ValueError("some additional keys in order which aren't in all keys")
+        if not all(list(order.values())[i] in all_elements for i in range(len(order))):
+            # ToDo built option for using only the keys in all_elements instead of raising Error
+            raise ValueError(
+                f"some additional keys in order which aren't in all keys: {set(order.values()) - all_elements}"
+            )
         if not len(set(order.values())) == len(order):
             raise ValueError("not all order keys unique")
 
@@ -103,7 +107,7 @@ def _create_sorted_list_from_order(
                 order[main_element_position] = main_element
 
         placed_keys = set(order.values())
-        sorted_list = list(set(all_elements) - placed_keys)
+        sorted_list = list(all_elements - placed_keys)
 
         for order_no in sorted(list(order.keys())):
             sorted_list.insert(order_no, order[order_no])
