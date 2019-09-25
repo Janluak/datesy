@@ -41,10 +41,10 @@ def _create_sorted_list_from_order(
 
     Parameters
     ----------
-    all_elements : list, set
-        all the strings which shall be put in order
     order : dict, list
         the dictionary with the positions (keys) and elements (values)
+    all_elements : list, set
+        all the strings which shall be put in order
     main_element : str
         the main_element
     main_element_position : int
