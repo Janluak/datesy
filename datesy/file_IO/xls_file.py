@@ -196,7 +196,7 @@ def write_multi_sheet_from_DataFrame(file_name, data_frames, sheet_order=None):
 
 
 def write_xlsx_single_sheet_from_dict(
-    file_name, data, main_key=None, sheet=None, order=None, inverse=False
+    file_name, data, main_key_name=None, sheet=None, order=None, inverse=False
 ):
     """
     Save a pandas data_frame to file_name
@@ -208,7 +208,7 @@ def write_xlsx_single_sheet_from_dict(
     data : dict
         dictionary of handling. `{main_element: {handling}}`
         if more than one main_element is provided the main_element is treated as sheet name
-    main_key : str, optional
+    main_key_name : str, optional
         if the json or dict does not have the main key as a single `{main_element : dict}` present, it needs to be specified
     sheet : str, optional
         a sheet name for the handling
@@ -220,7 +220,7 @@ def write_xlsx_single_sheet_from_dict(
     """
     from ..convert import dict_to_pandas_data_frame
 
-    data_frame = dict_to_pandas_data_frame(data, False, main_key, order, inverse)
+    data_frame = dict_to_pandas_data_frame(data, False, main_key_name, order, inverse)
     write_single_sheet_from_DataFrame(
         file_name=file_name, data_frame=data_frame, sheet_name=sheet
     )
