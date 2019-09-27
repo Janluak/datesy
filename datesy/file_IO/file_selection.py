@@ -46,7 +46,7 @@ def check_file_name_ending(file_name, ending):
         The file_name to check the ending for
         The file_name may contain a path, so ``file_name.ending`` as well as ``path/to/file_name.ending`` will work
 
-    ending : str, set
+    ending : str, set, list
         The desired ending or multiple desired endings
         For single entries e.g. ``.json`` or ``csv``, for multiple endings e.g. ``['.json', 'csv']``
 
@@ -59,18 +59,16 @@ def check_file_name_ending(file_name, ending):
     # input type check
     if not isinstance(file_name, str):
         raise TypeError(
-            "file_name needs to be string, {} provided".format(type(file_name))
+            f"file_name needs to be string, {type(file_name)} provided"
         )
-    if not isinstance(ending, (str, list)):
+    if not isinstance(ending, (str, list, set)):
         raise TypeError(
-            "ending needs to be either a list or a string, {} provided".format(
-                type(ending)
-            )
+            f"ending needs to be either a list or a string, {type(ending)} provided"
         )
 
     # check if multiple endings got provided
     if not isinstance(ending, list):
-        ending = [ending]
+        ending = list(ending)
 
     # remove '.' from ending if provided as first character
     for element in ending:
