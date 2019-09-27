@@ -18,6 +18,32 @@ __all__ = [
 ]
 
 
+def load(path):
+    """
+    Load all xls(x) files in the directory with all their sheets to a pandas.DataFrame as values to sheet_names as keys in a dictionary
+    Specifying a file_name: one file will be loaded.
+    Specifying a directory: all `*.xls(x)` files will be loaded.
+
+    Parameters
+    ----------
+    path : str
+        path to a file_name or directory
+
+    Returns
+    -------
+    dict
+        dictionary containing the sheets as `panda.DataFrames`: ``{file_name: {sheet_name: pandas.DataFrame}}``
+
+    """
+    files = return_file_list_if_path(path, pattern="*.xls*", return_always_list=True)
+    data = load_these_files(files)
+    try:
+        [value] = data.values()
+        return value
+    except ValueError:
+        return data
+
+
 def load_single_sheet(file_name, sheet=None):
     """
     Load a xls(x) file's (first) sheet to a pandas.DataFrame
