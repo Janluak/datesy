@@ -102,3 +102,37 @@ def load_all(directory):
     data = load_these(files)
 
     return data
+
+
+def write(file_name, data, main_key_name=None):
+    """
+    Save xml file from dict or collections.OrderedDict to file
+
+    Parameters
+    ----------
+    file_name : str
+        the file_name to save under. if no ending is provided, saved as .xml
+    data : dict, collections.OrderedDict
+        the dictionary to be saved as xml
+    main_key_name : str
+        if the dict/OrderedDict does not have the main key as a single key present (``{main_element_name: dict}``), it needs to be specified
+    Returns
+    -------
+
+    """
+    if main_key_name:
+        data = {main_key_name: data}
+
+    if "." not in file_name:
+        file_name += ".xml"
+
+    logging.info(f"saving to file_name: {file_name}")
+
+    if not check_file_name_ending(file_name, "xml"):
+        logging.warning(
+            f"file_name ending {file_name.split('.')[-1]} different to standard ({'xml'})"
+        )
+
+    from xmltodict import unparse
+
+    unparse(data, output=file_name)

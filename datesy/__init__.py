@@ -10,6 +10,7 @@ from .file_IO import *
 # shortcuts
 load_json = json_file.load
 load_csv = csv_file.load
+load_xml = xml_file.load
 write_json = json_file.write
 write_csv = csv_file.write
-load_xml = xml_file.load
+write_xml = xml_file.write
