@@ -23,7 +23,7 @@ def match_similar(
     similarity_limit_for_manual_checking=0.6,
 ):
     """
-    Returns a dictionary with #!list_a as keys and #!list_b as values based on most similarity.     # Imperativ ein Satz!
+    Return a dictionary with ``list_for_matching`` as keys and ``list_to_be_matched_to`` as values based on most similarity.
     Matching twice to the same value is possible!
     If auto_match_all is set to False, human interface is able to decline a match. Similarity distance for switching
     between automatic matches and manual is set by `distance_for_automatic_vs_manual_matching`.
@@ -160,10 +160,7 @@ def match_similar(
                         )
                     if print_auto_match:
                         print(
-                            "automatically matched: {} - {}".format(
-                                entry_a,
-                                most_similar[entry_a][ordered_most_similar[entry_a][0]],
-                            )
+                            f"automatically matched: {entry_a} - {most_similar[entry_a][ordered_most_similar[entry_a][0]]}"
                         )
                 except IndexError:
                     pass
@@ -293,12 +290,8 @@ def match_similar(
 
                         if print_auto_match:
                             print(
-                                "automatically matched: {} - {}".format(
-                                    entry_a,
-                                    most_similar[entry_a][
-                                        ordered_most_similar[entry_a][0]
-                                    ],
-                                )
+                                f"automatically matched: {entry_a} - "
+                                f"{most_similar[entry_a][ordered_most_similar[entry_a][0]]}"
                             )
                         match[entry_a] = most_similar[entry_a][
                             ordered_most_similar[entry_a][0]
@@ -429,9 +422,7 @@ def match_similar(
             if entry_a not in match:
                 no_match.append(entry_a)
                 logging.warning(
-                    'no similarity for "{}" above {}% similarity'.format(
-                        entry_a, similarity_limit_for_manual_checking * 100
-                    )
+                    f'no similarity for "{entry_a}" above {similarity_limit_for_manual_checking * 100}% similarity'
                 )
 
     # translating back to the original values #

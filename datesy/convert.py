@@ -62,7 +62,7 @@ def dict_to_rows(
     main_key_name : str, optional
     main_key_position : int, optional
     if_empty_value : any, optional
-    order : dict, None, optional
+    order : dict, list, None, optional
 
     Returns
     -------
@@ -224,17 +224,28 @@ def pandas_data_frame_to_dict(
     return data
 
 
-def xml_to_dict(ordered_data, list_reduction, manual_selection):
+def xml_to_standard_dict(
+    ordered_data,
+    reduce_orderedDicts=False,
+    reduce_lists=False,
+    manual_selection_for_list_reduction=False,
+):
     """
-    Convert a xml/orderedDict to dictionary
+    Convert a xml/orderedDict to normal dictionary
 
     Parameters
     ----------
     ordered_data : orderedDict
-    list_reduction : bool
+        input xml data to convert to standard dict
+    reduce_orderedDicts : bool, optional
+        if collections.orderedDicts shall be converted to normal dicts
+    reduce_lists : bool, list, set, optional
         if lists in the dictionary shall be converted to dictionaries with transformed keys
         (list_key + unique key from dictionary from list_element)
-    manual_selection : bool
+        if list or set is provided, only these values will be reduced
+    manual_selection_for_list_reduction : bool
+        if manually decision on list reduction shall be used
+        all keys in ``reduce_lists`` will be automatically reduced
 
     Returns
     -------
@@ -247,13 +258,19 @@ def xml_to_dict(ordered_data, list_reduction, manual_selection):
     from ._helper import _reduce_lists, _dictionize
 
     data = dict()
-    for key in ordered_data:
-        if isinstance(ordered_data[key], OrderedDict):
-            data[key] = _dictionize(ordered_data[key])
-        else:
-            data[key] = ordered_data[key]
+    if reduce_orderedDicts:
+        for key in ordered_data:
+            if isinstance(ordered_data[key], OrderedDict):
+                data[key] = _dictionize(ordered_data[key])
+            else:
+                data[key] = ordered_data[key]
 
-    if list_reduction:
-        data = _reduce_lists(data, list_reduction, manual_selection)
+    if manual_selection_for_list_reduction:
+        raise NotImplemented
+        # if reduce_lists and not isinstance(reduce_lists, bool):
+        #     data = _reduce_lists(data, reduce_lists, manual_selection_for_list_reduction)
+        # # manual selection here
+    elif reduce_lists:
+        data = _reduce_lists(data, reduce_lists, manual_selection_for_list_reduction)
 
     return data

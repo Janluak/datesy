@@ -1,11 +1,16 @@
 from .file_selection import *
 
-__all__ = ["load", "load_all", "load_single", "load_these", "write"]
+__doc__ = (
+    "The json_file module takes care of all I/O interactions concerning json files"
+)
+__all__ = ["load", "load_single", "load_these", "load_all", "write"]
 
 
 def load(path):
     """
-    Load a json file_name to a dictionary
+    Load(s) json file(s) and returns the dictionary/-ies
+    Specifying a file_name: one file will be loaded.
+    Specifying a directory: all `*.json` files will be loaded.
 
     Parameters
     ----------
@@ -14,9 +19,8 @@ def load(path):
 
     Returns
     -------
-    handling : dict
-        if a single file_name provided, the dictionary.
-        otherwise a dict of dicts with the loaded dicts
+    dict
+        dictionary representing the json ``{file_name: {data}}``
 
     """
     files = return_file_list_if_path(path, file_ending=".json", return_always_list=True)
@@ -28,40 +32,69 @@ def load(path):
         return data
 
 
-def load_single(path):
+def load_single(file_name):
     """
-    Load a single json file_name
+    Load a single json file
 
     Parameters
     ----------
-    path : str
-        path to file_name
+    file_name : str
+        file_name to load from
 
     Returns
     -------
-    handling : dict
-        the loaded json as a dict
+    dict
+        the loaded json as a dict ``{data}``
 
     """
     from json import load
 
-    with open(path, "r") as f:
-        logging.info("loading file_name {}".format(path))
+    with open(file_name, "r") as f:
+        logging.info("loading file_name {}".format(file_name))
         return load(f)
 
 
-def load_these(file_list):
-    if not isinstance(file_list, list):
-        raise TypeError("Expected list, got {}".format(type(file_list)))
+def load_these(file_name_list):
+    """
+    Load specified json files and return the data in a dictionary with file_name as key
+
+    Parameters
+    ----------
+    file_name_list : list
+        list of file_names to load from
+
+    Returns
+    -------
+    dict(dict)
+        the dictionaries from the files as values of file_name as key
+        ``{file_name: {data}}``
+
+    """
+    if not isinstance(file_name_list, list):
+        raise TypeError("Expected list, got {}".format(type(file_name_list)))
 
     data = dict()
-    for file in file_list:
+    for file in file_name_list:
         data[file] = load_single(file)
 
     return data
 
 
 def load_all(directory):
+    """
+    Load all json files in the directory and return the data in a dictionary with file_name as key
+
+    Parameters
+    ----------
+    directory : str
+        the directory containing the json files
+
+    Returns
+    -------
+    dict(dict)
+        the dictionaries from the files as values of file_name as key
+        ``{file_name: {data}}``
+    """
     if not os.path.isdir(directory):
         raise NotADirectoryError
 
@@ -71,31 +104,29 @@ def load_all(directory):
     return data
 
 
-def write(file, data):
+def write(file_name, data):
     """
-    Save json from dict
+    Save json from dict to file
 
     Parameters
     ----------
-    file : str
+    file_name : str
         the file_name to save under. if no ending is provided, saved as .json
     data : dict
         the dictionary to be saved as json
 
     """
-    if "." not in file:
-        file += ".json"
+    if "." not in file_name:
+        file_name += ".json"
 
-    if not check_file_name_ending(file, "json"):
+    if not check_file_name_ending(file_name, "json"):
         logging.warning(
-            "file_name ending {} different to standard ({})".format(
-                file.split(".")[-1], "json"
-            )
+            f"file_name ending {'.' + file_name.split('.')[-1]} different to standard ({'.json'})"
         )
 
-    logging.info("saving to file_name: {}".format(file))
+    logging.info(f"saving to file_name: {file_name}")
 
     from json import dump
 
-    with open(file, "w") as fp:
+    with open(file_name, "w") as fp:
         dump(data, fp)

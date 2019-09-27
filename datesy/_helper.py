@@ -1,6 +1,6 @@
 def _cast_main_key_name(data):
     """
-    casts the main_key_name in a dictionary `{main_key_name: {main_key_1 : {…}, maine_key_2 : {…}}}`
+    Cast the main_key_name in a dictionary ``{main_key_name: {main_key_1 : {…}, maine_key_2 : {…}}}``
 
     a main_key_name is the name for all the main_keys
 
@@ -11,16 +11,23 @@ def _cast_main_key_name(data):
 
     Returns
     -------
-    handling : dict
-        the input handling with the main_keys as new top_level keys of dict `{main_key_1 : {…}, maine_key_2 : {…}}`
+    data : dict
+        the input data with the main_keys as new top_level keys of dictionary `{main_key_1 : {…}, maine_key_2 : {…}}`
     main_key_name : str
-        the name of the main_keys
+        the name of the main_keys that got casted
     """
     if not isinstance(data, dict):
         raise TypeError("Expected type dict, got {}".format(type(data)))
     if len(data.keys()) != 1:
+        received_top_level_keys = set()
+        i = 0
+        for key in data:
+            received_top_level_keys.add(key)
+            i += 1
+            if i == 3:
+                break
         raise ValueError(
-            "Dict has more than one key. "
+            f"Dict has more than one key, received e.g. '{received_top_level_keys}'. "
             "Please provide either the main_element for dicts with more than one entry or "
             "provide dict with only one key"
         )
@@ -36,15 +43,17 @@ def _create_sorted_list_from_order(
     """
     Create a sorted list based on the values in order based on the key values.
 
-    The function additionally allows to specify more elements for the list which don't matter for the order.
-    Additionally, a main_element can be specified which has a leading position
+    The function additionally allows to specify more elements for the sorted_list which don't matter in terms of order.
+    Additionally, a main_element can be specified which has a leading position/is specified asides from order.
 
     Parameters
     ----------
     order : dict, list
         the dictionary with the positions (keys) and elements (values)
     all_elements : list, set
-        all the strings which shall be put in order
+        all the strings which shall be put in order.
+        if more keys in all_elements than in order: keys will be added in random order
+        if less keys in all_elements than in order: only the keys in all_elements will be returned, additional ones get deleted
     main_element : str
         the main_element
     main_element_position : int
@@ -52,7 +61,7 @@ def _create_sorted_list_from_order(
 
     Returns
     -------
-    sorted_list : list
+    list
         the sorted list with elements from all_elements and main_element
     """
     if (
@@ -84,13 +93,17 @@ def _create_sorted_list_from_order(
             all_elements.add(main_element)
         if not all(isinstance(order_no, int) for order_no in order.keys()):
             raise ValueError("all keys of order dictionary need to be of type int")
-        if not all(list(order.values())[i] in all_elements for i in range(len(order))):
-            # ToDo built option for using only the keys in all_elements instead of raising Error
-            raise ValueError(
-                f"some additional keys in order which aren't in all keys: {set(order.values()) - all_elements}"
-            )
         if not len(set(order.values())) == len(order):
             raise ValueError("not all order keys unique")
+        if not all(list(order.values())[i] in all_elements for i in range(len(order))):
+            for element in all_elements:
+                for key in order.copy():
+                    if element == order[key]:
+                        del order[key]
+            # formerly functionality: raising error if not all keys in order available in order.
+            # raise ValueError(
+            #     f"some additional keys in order which aren't in all keys: {set(order.values()) - all_elements}"
+            # )
 
         if main_element:
             if (
@@ -122,12 +135,14 @@ def _create_sorted_list_from_order(
         return order
 
     else:
-        raise TypeError("wrong type of order. {} given".format(type(order)))
+        raise TypeError(
+            f"wrong type of order, {type(order)} given. only list and dict are allowed"
+        )
 
 
 def _dictionize(sub_dict):
     """
-    creates normal dictionaries from a sub_dictionary containing orderedDicts
+    Create normal dictionaries from a sub_dictionary containing orderedDicts
 
     Parameters
     ----------
@@ -136,8 +151,8 @@ def _dictionize(sub_dict):
 
     Returns
     -------
-    normalized_dict : dict
-        the same handling structure as `sub_dict` just without orderedDicts
+    dict
+        the same structure as `sub_dict` just with dicts instead of  orderedDicts
 
 
     """

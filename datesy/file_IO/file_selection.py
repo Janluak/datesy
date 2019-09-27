@@ -5,12 +5,12 @@ def return_file_list_if_path(
     path, file_ending=None, pattern=None, regex=None, return_always_list=False
 ):
     """
-    Return all files in directory (optionally matching the options) if path is a directory
+    Return all files in directory (optionally specified with options) if path is a directory
 
     Parameters
     ----------
     path : str
-        the path to test
+        the path to test if directory
     file_ending : str, set, optional
         the file_name ending specifying the file_name type for the files in the directory
     pattern : str, optional
@@ -23,8 +23,8 @@ def return_file_list_if_path(
 
     Returns
     -------
-    path : list, str
-        the list of files if directory
+    list, str
+        if directory the list of files else the path (in a list if `return_always_list` is set)
 
     """
     if os.path.isdir(path):
@@ -38,7 +38,7 @@ def check_file_name_ending(file_name, ending):
     """
     Check if the file_name has the expected file_ending
 
-    If one of the provided endings is the file_name's ending return True, else False
+    If one of the provided endings is the file_name's ending return `True`, else `False`
 
     Parameters
     ----------
@@ -52,7 +52,7 @@ def check_file_name_ending(file_name, ending):
 
     Returns
     -------
-    check_passed : bool
+    bool
         `True` if the `file_name`'s ending is in the given `ending`, else `False`
 
     """
@@ -90,9 +90,9 @@ def get_file_list_from_directory(directory, file_ending=None, pattern=None, rege
     Parameters
     ----------
     directory : str
-        the directory where to get the files from
+        the directory containing the desired files
     file_ending : str, set, optional
-        the file_name ending specifying the file_name type
+        the file_name's ending specifying the file type
     pattern : str, optional
         pattern for the file_names to match
         ``DataFile_*.json`` where ``*`` could be a date or other strings
@@ -101,7 +101,7 @@ def get_file_list_from_directory(directory, file_ending=None, pattern=None, rege
 
     Returns
     -------
-    files : list
+    list
         a list of all relative file_name directories
     """
     # input type check
@@ -161,7 +161,7 @@ def get_latest_file_from_directory(
     directory, file_ending=None, pattern=None, regex=None
 ):
     """
-    Return the latest file_name (optionally filtered) from directory
+    Return the latest file_name (optionally filtered) from a directory
 
     Parameters
     ----------
@@ -177,7 +177,7 @@ def get_latest_file_from_directory(
 
     Returns
     -------
-    latest_file : str
+    str
         the `file_name` with the latest change date
 
     """

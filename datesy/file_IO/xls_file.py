@@ -1,80 +1,86 @@
 from pandas import read_excel, ExcelFile
 from .file_selection import *
 
+__doc__ = (
+    "The xls_file module takes care of all I/O interactions concerning xls(x) files"
+)
+
 __all__ = [
     "load_single_sheet",
-    "load_all_sheets",
     "load_these_sheets",
-    "load_these",
-    "load_all",
+    "load_all_sheets",
+    "load_these_files",
+    "load_all_files",
     "write_single_sheet_from_DataFrame",
-    "write_multi_sheet_from_DataFrame",
-    "write_xlsx_single_sheet_from_dict",
-    "write_xlsx_multi_sheet_from_dict_of_dicts",
+    "write_multi_sheet_from_DataFrames",
+    "write_single_sheet_from_dict",
+    "write_multi_sheet_from_dict_of_dicts",
 ]
 
 
-def load_single_sheet(file, sheet=None):
+def load_single_sheet(file_name, sheet=None):
     """
-    Load a xls(x) file_name to a pandas.DataFrame
+    Load a xls(x) file's (first) sheet to a pandas.DataFrame
 
     Parameters
     ----------
-    file : str
-        path to file_name
+    file_name : str
+       file_name to load from
     sheet : str, optional
-        a sheet_name to extract. default is first sheet
+        a specified sheet_name to extract. default is first sheet
 
     Returns
     -------
-    handling : pandas.DataFrame
-        pandas.DataFrame representing the xls(x) file_name
+    pandas.DataFrame
+        pandas.DataFrame representing the xls(x) file
     """
-    if not os.path.isfile(file):
+    if not os.path.isfile(file_name):
         raise TypeError("given path doesn't point to a file_name")
 
     if not sheet:
-        data = read_excel(file)
+        data = read_excel(file_name)
     else:
-        data = read_excel(file, sheet_name=sheet)
+        data = read_excel(file_name, sheet_name=sheet)
 
     return data
 
 
-def load_all_sheets(file):
+def load_all_sheets(file_name):
     """
-    Load from a xls(x) file_name to a pandas.DataFrame all its sheets
+    Load from a xls(x) file all its sheets to a pandas.DataFrame as values to sheet_names as keys in a dictionary
 
     Parameters
     ----------
-    file : str
-        path to file_name
+    file_name : str
+       file_name to load from
 
     Returns
     -------
-    handling : dict {sheet_name: pandas.DataFrame}
+    dict
         dictionary containing the sheet_names as keys and pandas.DataFrame representing the xls(x) sheets
+        ``{sheet_name: pandas.DataFrame}``
     """
 
-    excel_file = ExcelFile(file)
-    return load_these_sheets(file, list(excel_file.sheet_names))
+    excel_file = ExcelFile(file_name)
+    return load_these_sheets(file_name, list(excel_file.sheet_names))
 
 
 def load_these_sheets(file, sheets):
     """
-    Load from a xls(x) file_name to a pandas.DataFrame the specified sheets
+    Load from a xls(x) file_name the specified sheets to a pandas.DataFrame as values to sheet_names as keys in a dictionary
 
     Parameters
     ----------
-    file : str
-        path to file_name
+   file_name : str
+       file_name to load from
     sheets : list
-        sheet_names to extract
+        sheet_names to load
 
     Returns
     -------
-    handling : dict(pandas.DataFrame)
+    dict(pandas.DataFrame)
         dictionary containing the sheet_names as keys and pandas.DataFrame representing the xls(x) sheets
+        ``{sheet_name: pandas.DataFrame}``
     """
 
     data = dict()
@@ -84,57 +90,73 @@ def load_these_sheets(file, sheets):
     return data
 
 
-def load_these(file_list):
+def load_these_files(file_name_list):
     """
-    Load the xls(x) files to a pandas.DataFrame all their sheets
+    Load the specified xls(x) files with all their sheets to a pandas.DataFrame as values to sheet_names as keys in a dictionary
 
     Parameters
     ----------
-    file_list : list
-        paths to files
+    file_name_list : list
+        list of file_names to load from
 
     Returns
     -------
-    handling : dict
-        {file_name: {sheet_name: pandas.DataFrame}}
+    dict
+        the data from the sheets in a dictionary with sheet_name as key within again a dictionary with file_name as key
+        ``{file_name: {sheet_name: pandas.DataFrame}}``
     """
-    if not isinstance(file_list, list):
-        raise TypeError("Expected list, got {}".format(type(file_list)))
+    if not isinstance(file_name_list, list):
+        raise TypeError(f"Expected list, got {type(file_name_list)}")
 
     data = dict()
-    for file in file_list:
+    for file in file_name_list:
         data[file] = load_all_sheets(file)
 
     return data
 
 
-def load_all(directory):
+def load_all_files(directory):
+    """
+    Load all xls(x) files in the directory with all their sheets to a pandas.DataFrame as values to sheet_names as keys in a dictionary
+
+    Parameters
+    ----------
+    directory : str
+        the directory containing the xlsx files
+
+    Returns
+    -------
+    dict
+        the data from the sheets in a dictionary with sheet_name as key within again a dictionary with file_name as key
+        ``{file_name: {sheet_name: pandas.DataFrame}}``
+
+    """
     if not os.path.isdir(directory):
         raise NotADirectoryError
 
     files = get_file_list_from_directory(directory, pattern="*.xls*")
-    data = load_these(files)
+    data = load_these_files(files)
 
     return data
 
 
 def __write_xlsx(file_name, data):
     """
-    Write xlsx sheets from list of tuples (sheet_name, DataFrame)
+    Write xlsx sheets from list of tuples ``[(sheet_name, DataFrame)]``
 
     Parameters
     ----------
     file_name : str
+        the file_name to save the data under. if no ending is provided, saved as `file_name.xlsx`
     data : list
         list of tuples containing the sheet_name (pos.1) and panda.DataFrames (pos.2)
+        ``[(sheet_name1, pandas.DataFrame1), sheet_name2, pandas.DataFrame2]``
 
     """
     from pandas import ExcelWriter, DataFrame
 
     if not isinstance(file_name, str):
-        raise TypeError(
-            "file_name needs to be a string. {} given".format(type(file_name))
-        )
+        raise TypeError(f"file_name needs to be a string. {type(file_name)} given")
     if not all(isinstance(element[1], DataFrame) for element in data):
         raise TypeError("all handling elements[1] need to be a pandas.DataFrame")
 
@@ -142,26 +164,24 @@ def __write_xlsx(file_name, data):
         file_name += ".xlsx"
 
     with ExcelWriter(file_name) as writer:
-        logging.info("saving to file_name: {}".format(file_name))
+        logging.info(f"saving to file_name: {file_name}")
         for element in data:
-            if not isinstance(element[1], DataFrame):
-                raise ValueError("wrong handling type, expected pandas.DataFrame")
             element[1].to_excel(writer, sheet_name=element[0])
         writer.save()
 
 
 def write_single_sheet_from_DataFrame(file_name, data_frame, sheet_name=None):
     """
-    saves a pandas data_frame to file_name
+    Save a pandas.DataFrame to file
 
     Parameters
     ----------
     file_name : str
         the file_name to save under. if no ending is provided, saved as .xlsx
     data_frame : pandas.DataFrame
-        either a data_frame or a dict of data_frames
+        pandas.DataFrame to write to file_name
     sheet_name : str, optional
-        a sheet_name for the handling
+        a sheet_name containing the data
 
     """
     if not sheet_name:
@@ -170,9 +190,9 @@ def write_single_sheet_from_DataFrame(file_name, data_frame, sheet_name=None):
     __write_xlsx(file_name, [(sheet_name, data_frame)])
 
 
-def write_multi_sheet_from_DataFrame(file_name, data_frames, sheet_order=None):
+def write_multi_sheet_from_DataFrames(file_name, data_frames, sheet_order=None):
     """
-    saves a pandas data_frame to file_name
+    Save multiple pandas.DataFrames to one file
 
     Parameters
     ----------
@@ -180,8 +200,8 @@ def write_multi_sheet_from_DataFrame(file_name, data_frames, sheet_order=None):
         the file_name to save under. if no ending is provided, saved as .xlsx
     data_frames : dict {sheet_name: DataFrame}
         dict of data_frames
-    sheet_order : dict {int: str}, optional
-        for defining a specific order of the keys
+    sheet_order : dict {int: str}, list, optional
+        either a dictionary with the specified positions in a dictionary with positions as keys (integers) or in a list
 
     """
     if sheet_order:
@@ -195,25 +215,25 @@ def write_multi_sheet_from_DataFrame(file_name, data_frames, sheet_order=None):
         __write_xlsx(file_name, [(key, data_frames[key]) for key in data_frames])
 
 
-def write_xlsx_single_sheet_from_dict(
+def write_single_sheet_from_dict(
     file_name, data, main_key_name=None, sheet=None, order=None, inverse=False
 ):
     """
-    Save a pandas data_frame to file_name
+    Save a dictionary (``{main_key_name: {data}}``) as xlsx document to file
+    Uses the `dict_to_pandas_data_frame <https://datesy.readthedocs.io/en/latest/datesy.html#datesy.convert.dict_to_pandas_data_frame>`_ method of this package for converting the dictionary to pandas.DataFrame.
 
     Parameters
     ----------
     file_name : str
         the file_name to save under. if no ending is provided, saved as .xlsx
     data : dict
-        dictionary of handling. `{main_element: {handling}}`
-        if more than one main_element is provided the main_element is treated as sheet name
+        the dictionary to be saved as xlsx ``{main_key_name: {data}}``
     main_key_name : str, optional
         if the json or dict does not have the main key as a single `{main_element : dict}` present, it needs to be specified
     sheet : str, optional
         a sheet name for the handling
     order : dict, list, optional
-        list with the column names in order or dict with specified key positions
+        either a dictionary with the specified positions in a dictionary with positions as keys (integers) or in a list
     inverse : bool, optional
         if columns and rows shall be switched
 
@@ -226,19 +246,20 @@ def write_xlsx_single_sheet_from_dict(
     )
 
 
-def write_xlsx_multi_sheet_from_dict_of_dicts(file_name, data, order=None):
+def write_multi_sheet_from_dict_of_dicts(file_name, data, order=None):
     """
-    saves a pandas data_frame to file_name
+    Save dictionaries (``{sheet_name: {main_key_name: {data}}}``) as xlsx document to file
+    Uses the `dict_to_pandas_data_frame <https://datesy.readthedocs.io/en/latest/datesy.html#datesy.convert.dict_to_pandas_data_frame>`_ method of this package for converting the dictionary to pandas.DataFrame.
+
 
     Parameters
     ----------
     file_name : str
         the file_name to save under. if no ending is provided, saved as .xlsx
     data : dict
-        dictionary of handling. `{sheet: {main_element: {handling}}}`
-        if more than one main_element is provided the main_element is treated as sheet name
-    order : dict, optional
-        dict with sheet_name as key for order
+        the dictionary to be saved as xlsx ``{sheet_name: {main_key_name: {data}}}``
+    order : dict, list, optional
+        either a dictionary with the specified positions in a dictionary with positions as keys (integers) or in a list
 
     """
 
@@ -246,4 +267,4 @@ def write_xlsx_multi_sheet_from_dict_of_dicts(file_name, data, order=None):
 
     data_frames = {key: dict_to_pandas_data_frame(data[key], False) for key in data}
 
-    write_multi_sheet_from_DataFrame(file_name, data_frames, order)
+    write_multi_sheet_from_DataFrames(file_name, data_frames, order)

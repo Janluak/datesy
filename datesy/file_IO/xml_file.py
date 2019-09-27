@@ -1,11 +1,15 @@
 from .file_selection import *
 
-__all__ = ["load", "load_all", "load_single", "load_these"]
+__doc__ = "The xml_file module takes care of all I/O interactions concerning xml files"
+
+__all__ = ["load", "load_single", "load_these", "load_all"]
 
 
 def load(path):
     """
-    Load a xml file_name to a dictionary
+    Load(s) json file(s) and returns the dictionary/-ies
+    Specifying a file_name: one file will be loaded.
+    Specifying a directory: all `*.json` files will be loaded.
 
     Parameters
     ----------
@@ -14,9 +18,8 @@ def load(path):
 
     Returns
     -------
-    handling : dict
-        if a single file_name provided, the dictionary.
-        otherwise a dict of dicts with the loaded dicts
+    dict
+        dictionary representing the json ``{file_name: {data}}``
 
     """
     files = return_file_list_if_path(path, file_ending=".xml", return_always_list=True)
@@ -28,41 +31,70 @@ def load(path):
         return data
 
 
-def load_single(path):
+def load_single(file_name):
     """
-    Load a single xml file_name
+    Load a single xml file
 
     Parameters
     ----------
-    path : str
-        path to file_name
+    file_name : str
+        file_name to load from
 
     Returns
     -------
-    handling : dict
-        the loaded json as a dict
+    dict
+        the xml as ordered dict ``{collections.OrderedDict}``
 
     """
     from xmltodict import parse
 
-    with open(path, "r") as f:
-        logging.info("loading file_name {}".format(path))
+    with open(file_name, "r") as f:
+        logging.info("loading file_name {}".format(file_name))
         f = str(f.read())
         return dict(parse(f))
 
 
-def load_these(file_list):
-    if not isinstance(file_list, list):
-        raise TypeError("Expected list, got {}".format(type(file_list)))
+def load_these(file_name_list):
+    """
+    Load specified xml files and return the data in a dictionary with file_name as key
+
+    Parameters
+    ----------
+    file_name_list : list
+        list of file_names to load from
+
+    Returns
+    -------
+    dict(collections.OrderedDict)
+        the dictionaries from the files as values of file_name as key
+        ``{file_name: {collections.OrderedDict}``
+
+    """
+    if not isinstance(file_name_list, list):
+        raise TypeError("Expected list, got {}".format(type(file_name_list)))
 
     data = dict()
-    for file in file_list:
+    for file in file_name_list:
         data[file] = load_single(file)
 
     return data
 
 
 def load_all(directory):
+    """
+    Load all xml files in the directory and return the data in a dictionary with file_name as key
+
+    Parameters
+    ----------
+    directory : str
+        the directory containing the xml files
+
+    Returns
+    -------
+    dict(collections.OrderedDict)
+        the dictionaries from the files as values of file_name as key
+        ``{file_name: {collections.OrderedDict}}``
+    """
     if not os.path.isdir(directory):
         raise NotADirectoryError
 
