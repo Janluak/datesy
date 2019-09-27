@@ -243,7 +243,7 @@ def xml_to_standard_dict(
         if lists in the dictionary shall be converted to dictionaries with transformed keys
         (list_key + unique key from dictionary from list_element)
         if list or set is provided, only these values will be reduced
-    manual_selection_for_list_reduction : bool
+    manual_selection_for_list_reduction : bool, optional
         if manually decision on list reduction shall be used
         all keys in ``reduce_lists`` will be automatically reduced
 
