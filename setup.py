@@ -27,5 +27,5 @@ setup(
         "Programming Language :: Python :: 3.7",
     ],
     # https://pypi.org/pypi?%3Aaction=list_classifiers
-    install_requires=["numpy", "pandas", "xmltodict", "xlrd", "openpyxl"],
+    install_requires=["pandas", "xmltodict"],
 )
