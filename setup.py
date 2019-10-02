@@ -17,7 +17,7 @@ setup(
     author_email=author_email,
     license=packet_license,
     packages=["datesy", "datesy/file_IO"],
-    python_requires=">=3.7",
+    python_requires=">=3.6",
     zip_safe=False,
     classifiers=[
         "Development Status :: 3 - Alpha",
