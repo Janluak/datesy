@@ -1,7 +1,10 @@
-datesy.file\_IO package
-=========================
+File I/O subpackage
+===================
 
-datesy.file\_IO.file\_selection module
+All functions of `datesy` taking care of file I/O are listed here, separated by file_type.
+Only exception is the first module, providing functions for file selection.
+
+file\_selection module
 ----------------------------------------
 
 .. automodule:: datesy.file_IO.file_selection
@@ -10,7 +13,7 @@ datesy.file\_IO.file\_selection module
    :show-inheritance:
 
 
-datesy.file\_IO.json\_file module
+json\_file module
 -----------------------------------
 
 .. automodule:: datesy.file_IO.json_file
@@ -19,7 +22,7 @@ datesy.file\_IO.json\_file module
    :show-inheritance:
 
 
-datesy.file\_IO.csv\_file module
+csv\_file module
 ----------------------------------
 
 .. automodule:: datesy.file_IO.csv_file
@@ -28,7 +31,7 @@ datesy.file\_IO.csv\_file module
    :show-inheritance:
 
 
-datesy.file\_IO.xls\_file module
+xls\_file module
 ----------------------------------
 
 .. automodule:: datesy.file_IO.xls_file
@@ -36,7 +39,7 @@ datesy.file\_IO.xls\_file module
    :undoc-members:
    :show-inheritance:
 
-datesy.file\_IO.xml\_file module
+xml\_file module
 ----------------------------------
 
 .. automodule:: datesy.file_IO.xml_file

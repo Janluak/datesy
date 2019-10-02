@@ -1,3 +1,7 @@
+__doc__ = "All actions of transforming data from different file formats are to be found here"
+__all__ = ["rows_to_dict", "dict_to_rows", "pandas_data_frame_to_dict", "dict_to_pandas_data_frame", "xml_to_standard_dict"]
+
+
 def rows_to_dict(
     rows,
     main_key_position=0,
@@ -11,16 +15,21 @@ def rows_to_dict(
     Parameters
     ----------
     rows : list(lists)
+        the row based data to convert to `dict`
     main_key_position : int, optional
+        if the main_key is not on the top left, its position can be specified
     null_value : any, optional
+        if an emtpy field in the lists shall be represented somehow in the dictionary
     header_line : int, optional
+        if the header_line is not the first one, its position can be specified
     contains_open_ends : bool, optional
-        if each row is not in the same length due to last set entry as last element in row
+        if each row is not in the same length (due to last set entry as last element in row),
+        a length check for corrupted data can be ignored
 
     Returns
     -------
-    handling : dict
-        dictionary containing the information from csv
+    dict
+        dictionary containing the information from row-based data
 
     """
     data = dict()
@@ -54,15 +63,20 @@ def dict_to_rows(
     data, main_key_name=None, main_key_position=None, if_empty_value=None, order=None
 ):
     """
-    Convert a dictionary to rows
+    Convert a dictionary to rows (list(lists))
 
     Parameters
     ----------
     data : dict
+        the data to convert in form of a dictionary
     main_key_name : str, optional
+        if the data isn't provided as `{main_key: data}` the key needs to be specified
     main_key_position : int, optional
+        if the main_key shall not be on top left of the data the position can be specified
     if_empty_value : any, optional
+        if a main_key's sub_key is not set something different than `blank` can be defined
     order : dict, list, None, optional
+        if a special order for the keys is required
 
     Returns
     -------
@@ -93,7 +107,7 @@ def dict_to_rows(
         )  # put the json_key to position in csv
     else:
         from ._helper import _create_sorted_list_from_order
-
+        # ToDo check what happens if orderedDict is used instead of dict -> crash with order?
         header = _create_sorted_list_from_order(
             all_elements=header_keys,
             order=order,

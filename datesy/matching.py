@@ -1,5 +1,7 @@
 from difflib import SequenceMatcher
 import re, os, logging
+__doc__ = "All actions of mapping data to other data as well as the functions helpful for that are to be found here"
+__all__ = ["simplify_strings", "match_similar"]
 
 
 def _check_for_unique_similarity(simi, value, dict_entry):
@@ -9,6 +11,32 @@ def _check_for_unique_similarity(simi, value, dict_entry):
         dict_entry[simi].append(value)
     else:
         dict_entry[simi] = value
+
+
+def simplify_strings(to_simplify, simplifier="standard"):
+    """
+    Simplify a string, set(strings), list(strings), dict(strings as keys)
+    Options for simplifying include: lower capitals, separators, both (standard), own set of simplyfiers
+
+    Parameters
+    ----------
+    to_simplify : list, dict, set, string
+        the string(s) to simplify presented by itself or as part of another data format
+    simplifier : list ['capital', chars, ], optional
+        desired simplifiers can be specified. otherwise the standard ones will be selected
+
+    Returns
+    -------
+    to_simplify : simplified values
+
+    """
+    standard_simplifiers = "[_, | \n ' & \" % \\ * -]"
+
+    return to_simplify
+
+
+def match_similar_with_manual_selection():
+    return
 
 
 def match_similar(

@@ -1,3 +1,7 @@
+__doc__ = "All actions of inspecting data are to be found here"
+__all__ = ["find_header_line", "find_key"]
+
+
 def find_header_line(data, header_keys):
     """
     Find the header line in row_based data_structure

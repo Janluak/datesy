@@ -6,6 +6,8 @@
 Welcome to datesy's documentation!
 ==================================
 
+Datesy, making DATa handling EaSY – the intro to data handling in python
+
 .. toctree::
 
  intro
