@@ -96,10 +96,9 @@ def _create_sorted_list_from_order(
         if not len(set(order.values())) == len(order):
             raise ValueError("not all order keys unique")
         if not all(list(order.values())[i] in all_elements for i in range(len(order))):
-            for element in all_elements:
-                for key in order.copy():
-                    if element == order[key]:
-                        del order[key]
+            for key in order.copy():
+                if order[key] not in all_elements:
+                    del order[key]
             # formerly functionality: raising error if not all keys in order available in order.
             # raise ValueError(
             #     f"some additional keys in order which aren't in all keys: {set(order.values()) - all_elements}"
