@@ -27,5 +27,5 @@ setup(
         "Programming Language :: Python :: 3.6",
     ],
     # https://pypi.org/pypi?%3Aaction=list_classifiers
-    install_requires=["pandas", "xmltodict"],
+    install_requires=["pandas", "xmltodict", "openpyxl"],
 )
