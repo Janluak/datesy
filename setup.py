@@ -8,10 +8,15 @@ from static_information import *
 
 # https://python-packaging.readthedocs.io/en/latest/minimal.html
 
+with open("README.md", "r") as f:
+    long_description = f.read()
+
 setup(
     name=project_name,
     version=version,
     description="basic tools for taking care for making the intro to handling handling with python easier",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     url=url,
     author=author,
     author_email=author_email,
