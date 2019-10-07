@@ -2,7 +2,7 @@ from .file_selection import *
 
 __doc__ = "The xml_file module takes care of all I/O interactions concerning xml files"
 
-__all__ = ["load", "load_single", "load_these", "load_all"]
+__all__ = ["load", "load_single", "load_these", "load_all", "write"]
 
 
 def load(path):
