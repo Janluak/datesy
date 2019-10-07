@@ -24,7 +24,7 @@ setup(
         "Intended Audience :: Information Technology",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.6",
     ],
     # https://pypi.org/pypi?%3Aaction=list_classifiers
     install_requires=["pandas", "xmltodict"],

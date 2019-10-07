@@ -1,5 +1,13 @@
-__doc__ = "All actions of transforming data from different file formats are to be found here"
-__all__ = ["rows_to_dict", "dict_to_rows", "pandas_data_frame_to_dict", "dict_to_pandas_data_frame", "xml_to_standard_dict"]
+__doc__ = (
+    "All actions of transforming data from different file formats are to be found here"
+)
+__all__ = [
+    "rows_to_dict",
+    "dict_to_rows",
+    "pandas_data_frame_to_dict",
+    "dict_to_pandas_data_frame",
+    "xml_to_standard_dict",
+]
 
 
 def rows_to_dict(
@@ -107,6 +115,7 @@ def dict_to_rows(
         )  # put the json_key to position in csv
     else:
         from ._helper import _create_sorted_list_from_order
+
         # ToDo check what happens if orderedDict is used instead of dict -> crash with order?
         header = _create_sorted_list_from_order(
             all_elements=header_keys,

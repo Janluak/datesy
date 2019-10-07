@@ -91,13 +91,13 @@ def load_all_sheets(file_name):
     return load_these_sheets(file_name, list(excel_file.sheet_names))
 
 
-def load_these_sheets(file, sheets):
+def load_these_sheets(file_name, sheets):
     """
     Load from a xls(x) file_name the specified sheets to a pandas.DataFrame as values to sheet_names as keys in a dictionary
 
     Parameters
     ----------
-   file_name : str
+    file_name : str
        file_name to load from
     sheets : list
         sheet_names to load
@@ -111,7 +111,7 @@ def load_these_sheets(file, sheets):
 
     data = dict()
     for sheet in sheets:
-        data[sheet] = load_single_sheet(file, sheet)
+        data[sheet] = load_single_sheet(file_name, sheet)
 
     return data
 

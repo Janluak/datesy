@@ -58,9 +58,7 @@ def check_file_name_ending(file_name, ending):
     """
     # input type check
     if not isinstance(file_name, str):
-        raise TypeError(
-            f"file_name needs to be string, {type(file_name)} provided"
-        )
+        raise TypeError(f"file_name needs to be string, {type(file_name)} provided")
     if not isinstance(ending, (str, list, set)):
         raise TypeError(
             f"ending needs to be either a list or a string, {type(ending)} provided"

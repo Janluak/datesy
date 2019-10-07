@@ -1,5 +1,6 @@
 from difflib import SequenceMatcher
 import re, os, logging
+
 __doc__ = "All actions of mapping data to other data as well as the functions helpful for that are to be found here"
 __all__ = ["simplify_strings", "match_similar"]
 
