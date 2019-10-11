@@ -65,7 +65,7 @@ def check_file_name_ending(file_name, ending):
         )
 
     # check if multiple endings got provided
-    if not isinstance(ending, list):
+    if not isinstance(ending, (set, list)):
         ending = [ending]
 
     # remove '.' from ending if provided as first character
