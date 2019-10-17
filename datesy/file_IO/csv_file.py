@@ -110,7 +110,7 @@ def load_these(file_name_list, **kwargs):
 
     Returns
     -------
-    dict(list)
+    dict
         the rows from the files as values of file_name as key
         ``{file_name : [[row1.1, row1.2]]}``
 
@@ -141,7 +141,7 @@ def load_all(directory, **kwargs):
 
     Returns
     -------
-    dict(list)
+    dict
         the rows from the files as values of file_name as key
         ``{file_name : [[row1.1, row1.2]]}``
     """
@@ -264,8 +264,8 @@ def write(
         if the json or dict does not have the main key as a single key present (``{main_element_name: dict}``), it needs to be specified
     main_key_position : int, optional
         the position in csv of the dictionary main key
-    order : dict {int: str}, list, optional
-        for defining a specific order of the keys
+    order : dict, list, optional
+        for defining a specific order of the keys. if dict, format: ``{int: str}``
         either a dictionary with the specified positions in a dictionary with positions as keys (integers) or in a list
     if_empty_value : any, optional
         the value to set when no handling is available

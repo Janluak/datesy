@@ -22,7 +22,7 @@ def rows_to_dict(
 
     Parameters
     ----------
-    rows : list(lists)
+    rows : list
         the row based data to convert to `dict`
     main_key_position : int, optional
         if the main_key is not on the top left, its position can be specified
