@@ -16,7 +16,7 @@ def _check_for_unique_similarity(simi, value, dict_entry):
 
 def simplify_strings(to_simplify, lower_case=True, simplifier=True):
     """
-    Simplify a string, set(strings), list(strings), keys in dict
+    Simplify a `string`, `set(strings)`, `list(strings)`, `keys in dict`
     Options for simplifying include: lower capitals, separators, both (standard), own set of simplifier
 
     Parameters
@@ -24,14 +24,14 @@ def simplify_strings(to_simplify, lower_case=True, simplifier=True):
     to_simplify : list, set, string
         the string(s) to simplify presented by itself or as part of another data format
     lower_case : bool, optional
-        if the input shall be only lower_case
+        if the input shall be converted to only lower_case (standard: `True`)
     simplifier : str, optional
-        the chars to be removed from the string. if type bool and True, standard chars `_ , | \\\\n ' & " % * - \\\\` used
+        the chars to be removed from the string. if type bool and True, standard chars ``_ , | \\n ' & " % * - \\`` used
 
     Returns
     -------
     dict
-        simplified values {input_value: simplified_value}
+        simplified values ``{input_value: simplified_value}``
     """
 
     # PreProcessing the input
