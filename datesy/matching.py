@@ -14,26 +14,50 @@ def _check_for_unique_similarity(simi, value, dict_entry):
         dict_entry[simi] = value
 
 
-def simplify_strings(to_simplify, simplifier="standard"):
+def simplify_strings(to_simplify, lower_case=True, simplifier=True):
     """
-    Simplify a string, set(strings), list(strings), dict(strings as keys)
-    Options for simplifying include: lower capitals, separators, both (standard), own set of simplyfiers
+    Simplify a string, set(strings), list(strings), keys in dict
+    Options for simplifying include: lower capitals, separators, both (standard), own set of simplifier
 
     Parameters
     ----------
-    to_simplify : list, dict, set, string
+    to_simplify : list, set, string
         the string(s) to simplify presented by itself or as part of another data format
-    simplifier : list ['capital', chars, ], optional
-        desired simplifiers can be specified. otherwise the standard ones will be selected
+    lower_case : bool, optional
+        if the input shall be only lower_case
+    simplifier : str, optional
+        the chars to be removed from the string. if type bool and True, standard chars `_ , | \\\\n ' & " % * - \\\\` used
 
     Returns
     -------
-    to_simplify : simplified values
-
+    dict
+        simplified values {input_value: simplified_value}
     """
-    standard_simplifiers = "[_, | \n ' & \" % \\ * -]"
 
-    return to_simplify
+    # PreProcessing the input
+    if isinstance(simplifier, bool) and simplifier:
+        simplifier = "[_, | \n ' & \" % \\ * -]"
+    elif simplifier:
+        simplifier = f"[{simplifier}]"
+
+    if isinstance(to_simplify, str):
+        to_simplify = [to_simplify]
+    elif isinstance(to_simplify, set):
+        to_simplify = list(to_simplify)
+    elif isinstance(to_simplify, dict):
+        to_simplify = list(to_simplify.keys())
+
+    if not isinstance(to_simplify, list):
+        raise TypeError("to_simplify needs to be either of type str, list, set or dict")
+
+    if simplifier and lower_case:
+        simplified = {key: "".join(re.split(simplifier, key)).lower() for key in to_simplify}
+    elif simplifier:
+        simplified = {key: "".join(re.split(simplifier, key)) for key in to_simplify}
+    elif lower_case:
+        simplified = {key: key.lower() for key in to_simplify}
+
+    return simplified
 
 
 def match_similar_with_manual_selection():
