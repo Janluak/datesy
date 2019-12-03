@@ -56,6 +56,8 @@ def simplify_strings(to_simplify, lower_case=True, simplifier=True):
         simplified = {key: "".join(re.split(simplifier, key)) for key in to_simplify}
     elif lower_case:
         simplified = {key: key.lower() for key in to_simplify}
+    else:
+        raise ValueError("either simplifier or lower_case must be set")
 
     return simplified
 
