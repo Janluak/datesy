@@ -31,7 +31,7 @@ def simplify_strings(to_simplify, lower_case=True, simplifier=True):
     Returns
     -------
     dict
-        simplified values ``{input_value: simplified_value}``
+        simplified values ``{simplified_value: input_value}``
     """
 
     # PreProcessing the input
@@ -51,11 +51,11 @@ def simplify_strings(to_simplify, lower_case=True, simplifier=True):
         raise TypeError("to_simplify needs to be either of type str, list, set or dict")
 
     if simplifier and lower_case:
-        simplified = {key: "".join(re.split(simplifier, key)).lower() for key in to_simplify}
+        simplified = {"".join(re.split(simplifier, key)).lower(): key for key in to_simplify}
     elif simplifier:
-        simplified = {key: "".join(re.split(simplifier, key)) for key in to_simplify}
+        simplified = {"".join(re.split(simplifier, key)): key for key in to_simplify}
     elif lower_case:
-        simplified = {key: key.lower() for key in to_simplify}
+        simplified = {key.lower(): key for key in to_simplify}
     else:
         raise ValueError("either simplifier or lower_case must be set")
 
