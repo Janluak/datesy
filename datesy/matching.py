@@ -50,15 +50,29 @@ def simplify_strings(to_simplify, lower_case=True, simplifier=True):
     if not isinstance(to_simplify, list):
         raise TypeError("to_simplify needs to be either of type str, list, set or dict")
 
-    if simplifier and lower_case:
-        simplified = {"".join(re.split(simplifier, key)).lower(): key for key in to_simplify}
-    elif simplifier:
-        simplified = {"".join(re.split(simplifier, key)): key for key in to_simplify}
-    elif lower_case:
-        simplified = {key.lower(): key for key in to_simplify}
-    else:
-        raise ValueError("either simplifier or lower_case must be set")
+    simplified = dict()
+    not_unique = set()
 
+    def add_to_simplified(key, value):
+        if key in simplified:
+            not_unique.add(simplified[key])
+            not_unique.add(value)
+        else:
+            simplified[key] = value
+
+    for key in to_simplify:
+        if simplifier and lower_case:
+            add_to_simplified("".join(re.split(simplifier, key)).lower(), key)
+        elif simplifier:
+            add_to_simplified("".join(re.split(simplifier, key)), key)
+        elif lower_case:
+            add_to_simplified(key.lower(), key)
+        else:
+            raise ValueError("either simplifier or lower_case must be set")
+
+    if not_unique:
+        raise ValueError(f"simplification made the following entries not unique anymore."
+                         f"please provide different simplification method.\n{not_unique}")
     return simplified
 
 
