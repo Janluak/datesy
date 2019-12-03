@@ -1,8 +1,10 @@
 from difflib import SequenceMatcher
+from pandas import DataFrame
+from collections import OrderedDict
 import re, os, logging
 
 __doc__ = "All actions of mapping data to other data as well as the functions helpful for that are to be found here"
-__all__ = ["simplify_strings", "match_similar"]
+__all__ = ["simplify_strings", "match_similar", "match_comprehensive"]
 
 
 def _check_for_unique_similarity(simi, value, dict_entry):
@@ -78,6 +80,279 @@ def simplify_strings(to_simplify, lower_case=True, simplifier=True):
 
 def match_similar_with_manual_selection():
     return
+
+
+def _check_uniqueness_of_entries(data_set, data_set_name=None, raise_exception=True):
+    """
+    Check if all entries in iterable are unique in iterable
+
+    Parameters
+    ----------
+    data_set : [list, set]
+        iterable containing the entries to test for uniqueness
+    data_set_name : str, optional
+        the name of the data_set for displaying in exception
+    raise_exception : bool, optional
+        if raising an exception or returning `False` on non-uniqueness
+
+    """
+    if len(set(data_set)) != len(data_set):
+        entries = set()
+        doubles = set()
+
+        for entry in data_set:
+            if entry in entries:
+                doubles.add(entry)
+            entries.add(entry)
+        if data_set_name:
+            error_message = f"following {len(doubles)} entries of {data_set_name} are not unique: {doubles}"
+        else:
+            error_message = f"following {len(doubles)} entries are not unique in provided data: {doubles}"
+
+        if raise_exception:
+            raise ValueError(error_message)
+        else:
+            return False
+    return True
+
+
+def _find_direct_matches(list_for_matching, list_to_be_matched_to):
+    """
+    Find all 100% matches between the values of the two iterables
+
+    Parameters
+    ----------
+    list_for_matching : [list, set]
+        iterable containing the keys
+    list_to_be_matched_to : [list, set]
+        iterable containing the values to match to the keys
+
+    Returns
+    -------
+
+    matched : dict
+        all 100% matches
+
+    """
+    matches = dict()
+
+    for entry_a in list_for_matching.copy():
+        if entry_a in list_to_be_matched_to:
+            matches[entry_a] = entry_a
+            list_for_matching.remove(entry_a)
+            list_to_be_matched_to.remove(entry_a)
+
+    return matches
+
+
+def _calculate_similarities_listed_by_list_for_matching_entry(list_for_matching, list_to_be_matched_to):
+    """
+    Calculate the similarities between the iterable entries; return based on the entries of the `list_for_matching`
+
+    Parameters
+    ----------
+    list_for_matching : [set, list]
+        iterable containing the strings which shall be matched
+    list_to_be_matched_to : [set, list]
+        iterable containing the strings to be matched to
+
+    Returns
+    -------
+
+    OrderedDict
+        ``{value1_list_for_matching: {highest_similarity_match: {value1_list_to_be_matched_to}}, ...,
+        {lowest_similarity_match: ...}``
+
+    """
+    all_similarities_per_entry_a = dict()
+    ordered_similarity_per_entry_a = dict()
+
+    for entry_a in list_for_matching:
+        all_similarities_per_entry_a[entry_a] = dict()
+
+        for entry_b in list_to_be_matched_to:
+            similarity = SequenceMatcher(None, entry_a, entry_b).ratio()
+
+            if similarity not in all_similarities_per_entry_a[entry_a]:
+                all_similarities_per_entry_a[entry_a][similarity] = set()
+
+            all_similarities_per_entry_a[entry_a][similarity].add(entry_b)
+
+        ordered_similarities = sorted(all_similarities_per_entry_a[entry_a].keys(), reverse=True)
+
+        ordered_similarity_per_entry_a[entry_a] = OrderedDict()
+        for similarity in ordered_similarities:
+            ordered_similarity_per_entry_a[entry_a][similarity] = all_similarities_per_entry_a[entry_a][similarity]
+
+    return ordered_similarity_per_entry_a
+
+
+def _calculate_similarities_listed_by_similarity(list_for_matching, list_to_be_matched_to):
+    """
+    Calculate the similarities between the iterable entries; return based on the highest similarity values
+
+    Parameters
+    ----------
+    list_for_matching : [set, list]
+        iterable containing the strings which shall be matched
+    list_to_be_matched_to : [set, list]
+        iterable containing the strings to be matched to
+
+    Returns
+    -------
+
+    OrderedDict
+        ``{highest_similarity_match: [(a1, b1), (a2, b2), ...], ..., lowest_similarity_match: [...]}``
+
+    """
+    all_similarities_per_similarity_value = dict()
+    ordered_similarities_per_value = OrderedDict()
+
+    for entry_a in list_for_matching:
+
+        for entry_b in list_to_be_matched_to:
+            similarity = SequenceMatcher(None, entry_a, entry_b).ratio()
+
+            if similarity not in all_similarities_per_similarity_value:
+                all_similarities_per_similarity_value[similarity] = list()
+            all_similarities_per_similarity_value[similarity].append((entry_a, entry_b))
+
+    for similarity in sorted(all_similarities_per_similarity_value.keys(), reverse=True):
+        ordered_similarities_per_value[similarity] = all_similarities_per_similarity_value[similarity]
+
+    return ordered_similarities_per_value
+
+
+def _create_similarity_dataframe(similarities):
+    rows = list()
+
+    for similarity in similarities:
+        for match_set in similarities[similarity]:
+            rows.append([similarity, match_set[0], match_set[1]])
+    data_frame = DataFrame(
+        rows,
+        columns=["similarity", "entry_a", "entry_b"],
+    )
+    return data_frame
+
+
+def match_comprehensive(
+        list_for_matching,
+        list_to_be_matched_to,
+        simplified,
+):
+
+    # Checking if entries for each data_set are unique
+    for data_set in [list_for_matching, list_to_be_matched_to]:
+        _check_uniqueness_of_entries(
+            data_set, 'list_for_matching'
+            if data_set == list_for_matching
+            else 'list_to_be_matched_to'
+        )
+
+    if simplified:
+        dict_for_matching = simplify_strings(list_for_matching, True, simplified)
+        list_for_matching = list(dict_for_matching.keys())
+        _check_uniqueness_of_entries(list_for_matching, "list_for_matching-simplified")
+
+        dict_to_be_matched_to = simplify_strings(list_to_be_matched_to, True, simplified)
+        list_to_be_matched_to = list(dict_to_be_matched_to.keys())
+        _check_uniqueness_of_entries(list_to_be_matched_to, "list_to_be_matched_to-simplified")
+
+    match = _find_direct_matches(list_for_matching, list_to_be_matched_to)
+    similarities = _calculate_similarities_listed_by_similarity(list_for_matching, list_to_be_matched_to)
+
+    df = _create_similarity_dataframe(similarities)
+
+    # match = dict()
+    old_length = 0
+
+    while len(df.similarity) != 0 and len(df.similarity) != old_length:
+        old_length = len(df.similarity)
+        highest_similarity = df.similarity[0]
+        if (
+                len(df.similarity) > 1
+                and highest_similarity != df.similarity[1]
+                or len(df.similarity) == 0
+        ):
+            entry_a = df.entry_a[0]
+            entry_b = df.entry_b[0]
+            match[entry_a] = entry_b
+            df = df[df.similarity != highest_similarity]
+            df = df[df.entry_a != entry_a]
+            df = df[df.entry_b != entry_b]
+            df = df.reset_index(drop=True)
+        else:
+            indexes = list()
+            index = -1
+            for similarity in df.similarity:
+                index += 1
+                if highest_similarity == similarity:
+                    indexes.append(index)
+                else:
+                    break
+
+            # get all entries of un-unique similarity
+            all_entries = list()
+            all_entries_with_index = dict()
+            for index in indexes:
+                all_entries.append(df.entry_a[index])
+                if df.entry_a[index] not in all_entries_with_index:
+                    all_entries_with_index[df.entry_a[index]] = list()
+                all_entries_with_index[df.entry_a[index]].append(index)
+
+                all_entries.append(df.entry_b[index])
+                if df.entry_b[index] not in all_entries_with_index:
+                    all_entries_with_index[df.entry_b[index]] = list()
+                all_entries_with_index[df.entry_b[index]].append(index)
+
+            # get all entries which are doubled
+            doubled_entries = all_entries.copy()
+            for element in set(all_entries):
+                doubled_entries.remove(element)
+
+            unmatchable_indexes = list()
+            for element in doubled_entries:
+                for index in all_entries_with_index[element]:
+                    indexes.remove(index)
+                    unmatchable_indexes.append(index)
+
+            if indexes:
+                for index in indexes:
+                    entry_a = df.entry_a[index]
+                    entry_b = df.entry_b[index]
+                    match[entry_a] = entry_b
+                    df = df[df.entry_a != entry_a]
+                    df = df[df.entry_b != entry_b]
+                    df = df.reset_index(drop=True)
+
+            else:
+                # too similar strings: if for_matching doubled,
+                # return all to_be_matched_to; otherwise add unmatched
+                entry_a = df.entry_a[0]
+                entry_b = df.entry_b[0]
+
+                multiple_match = list()
+                for element in doubled_entries:
+                    for i, j in enumerate(list(df.entry_a)):
+                        if i > index:
+                            break
+                        if j == element:
+                            multiple_match.append(df.entry_b[i])
+                if multiple_match:
+                    match[entry_a] = multiple_match
+
+                df = df[df.entry_a != entry_a]
+                df = df[df.entry_b != entry_b]
+                df = df.reset_index(drop=True)
+
+    no_match = set(list_for_matching).difference(set(match))
+
+    if simplified:
+        match = {dict_for_matching[key]: dict_to_be_matched_to[value] for key, value in match.items()}
+        no_match = {dict_for_matching[key] for key in no_match}
+
+    return match, no_match
 
 
 def match_similar(
