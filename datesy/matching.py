@@ -896,14 +896,14 @@ def match_similar_with_manual_selection(
         try:
             generator = (
                 print(
-                    "{}: {:1.3f} | {} - {}: fit? ".format(
+                    "{}: {:2.1f}% | {} - {}: fit? ".format(
                         n + number_to_show,
                         round(
                             decreasing_matches[
                                 n + number_to_show
                                 ][0],
                             3,
-                        ),
+                        ) * 100,
                         entry_a,
                         decreasing_matches[
                                 n + number_to_show
