@@ -4,7 +4,7 @@ from collections import OrderedDict
 import re, os, logging
 
 __doc__ = "All actions of mapping data to other data as well as the functions helpful for that are to be found here"
-__all__ = ["simplify_strings", "match_similar", "match_comprehensive"]
+__all__ = ["simplify_strings", "match_similar", "match_comprehensive", "match_similar_with_manual_selection"]
 
 
 def _check_for_unique_similarity(simi, value, dict_entry):
@@ -76,10 +76,6 @@ def simplify_strings(to_simplify, lower_case=True, simplifier=True):
         raise ValueError(f"simplification made the following entries not unique anymore."
                          f"please provide different simplification method.\n{not_unique}")
     return simplified
-
-
-def match_similar_with_manual_selection():
-    return
 
 
 def _check_uniqueness_of_entries(data_set, data_set_name=None, raise_exception=True):
@@ -160,8 +156,8 @@ def _calculate_similarities_listed_by_list_for_matching_entry(list_for_matching,
     -------
 
     OrderedDict
-        ``{value1_list_for_matching: {highest_similarity_match: {value1_list_to_be_matched_to}}, ...,
-        {lowest_similarity_match: ...}``
+        ``{value1_list_for_matching: {highest_similarity_match: [value1_list_to_be_matched_to]}, ...,
+        {lowest_similarity_match: ...}}``
 
     """
     all_similarities_per_entry_a = dict()
@@ -174,9 +170,8 @@ def _calculate_similarities_listed_by_list_for_matching_entry(list_for_matching,
             similarity = SequenceMatcher(None, entry_a, entry_b).ratio()
 
             if similarity not in all_similarities_per_entry_a[entry_a]:
-                all_similarities_per_entry_a[entry_a][similarity] = set()
-
-            all_similarities_per_entry_a[entry_a][similarity].add(entry_b)
+                all_similarities_per_entry_a[entry_a][similarity] = list()
+            all_similarities_per_entry_a[entry_a][similarity].append(entry_b)
 
         ordered_similarities = sorted(all_similarities_per_entry_a[entry_a].keys(), reverse=True)
 
@@ -775,6 +770,237 @@ def match_similar(
             dict_for_matching[key]: dict_to_be_matched_to[match[key]]
             for key in match.keys()
         }
+        no_match = {dict_for_matching[key] for key in no_match}
+
+    return match, no_match
+
+
+def match_similar_with_manual_selection(
+        list_for_matching,
+        list_to_be_matched_to,
+        simplified=False,
+        minimal_distance_for_automatic_matching=0.1,
+        print_auto_matched=False,
+        similarity_limit_for_manual_checking=0.6,
+):
+    """
+
+    Parameters
+    ----------
+    list_for_matching : list
+        List of strings which shall be matched
+    list_to_be_matched_to : list
+        List of stings which shall be matched to
+    simplified : False, "capital", "separators", "all", list, str
+        For reducing the values by all small letters or unifying & deleting separators `separators`
+        or any other list of strings provided
+    print_auto_matched : bool
+        Especially for human rechecking: printing the automatically matched cases
+    minimal_distance_for_automatic_matching : float
+        If there is a vast difference between the most and second most matching value, automatically matching is provided
+        This parameter provides the similarity distance to be reached for automatically matching
+    similarity_limit_for_manual_checking : float
+        For not showing the most irrelevant match there could possibly exist
+
+    Returns
+    -------
+    match : dict
+        `{value_for_matching: value_to_be_mapped_to}`
+    no_match : list
+        A list of all values that could not be matched
+
+    """
+
+    def get_screen_width():
+        try:
+            _, columns = os.popen("stty size", "r").read().split()
+            window_width = int(columns)
+        except ValueError:
+            window_width = 200
+        return window_width
+
+    def calculate_longest_string():
+        longest_string_length = len(
+            str(
+                max(
+                    [element[1] for element in decreasing_matches],
+                    key=len,
+                )
+            )
+        )
+        return longest_string_length
+
+    def get_print_setting():
+        window_width = get_screen_width()
+        longest_string = calculate_longest_string() + len(entry_a)
+
+        minimal_string = 13
+        max_number_to_show = int(window_width / (longest_string + 3))
+
+        if max_number_to_show > int(window_width / minimal_string):
+            max_number_to_show = int(window_width / minimal_string)
+
+        number_to_show = (
+            max_number_to_show
+            if max_number_to_show < len(decreasing_matches)
+            else len(decreasing_matches)
+        )
+
+        characters = (
+            longest_string
+            if longest_string > minimal_string - 5
+            else minimal_string - 5
+        )
+
+        return number_to_show, characters, longest_string
+
+    def first_print_statement():
+        # print similarity values row
+        print(
+            "".join(
+                [
+                    "{}{}:  {:2.1f}% |".format(
+                        "".join([" " for i in range(longest_string - 8)]),
+                        n,
+                        round(decreasing_matches[n][0], 3) * 100,
+                    )
+                    for n in range(number_to_show)
+                ]
+            )
+        )
+
+        # print entry_a row
+        print(
+            "".join(
+                [
+                    " {:>{}} |".format(entry_a, characters)
+                    for i in range(number_to_show)
+                ]
+            )
+        )
+
+        # print possible matches row
+        print(
+            "".join(
+                [
+                    " {:>{}} |".format(
+                        decreasing_matches[n][1],
+                        characters,
+                    )
+                    for n in range(number_to_show)
+                ]
+            )
+        )
+
+    def further_print_statements(number_to_show):
+        try:
+            generator = (
+                print(
+                    "{}: {:1.3f} | {} - {}: fit? ".format(
+                        n + number_to_show,
+                        round(
+                            decreasing_matches[
+                                n + number_to_show
+                                ][0],
+                            3,
+                        ),
+                        entry_a,
+                        decreasing_matches[
+                                n + number_to_show
+                                ][1]
+
+                    )
+                )
+                for n in range(len(decreasing_matches))
+            )
+
+            for _ in generator:
+                result = input("match? ")
+                if result == "":
+                    match[entry_a] = decreasing_matches[
+                            number_to_show
+                        ][1]
+                    break
+                elif result == "break":
+                    break
+        except IndexError:
+            pass
+
+    # Checking if entries for each data_set are unique
+    for data_set in [list_for_matching, list_to_be_matched_to]:
+        _check_uniqueness_of_entries(
+            data_set, 'list_for_matching'
+            if data_set == list_for_matching
+            else 'list_to_be_matched_to'
+        )
+
+    if simplified:
+        dict_for_matching = simplify_strings(list_for_matching, True, simplified)
+        list_for_matching = list(dict_for_matching.keys())
+        _check_uniqueness_of_entries(list_for_matching, "list_for_matching-simplified")
+
+        dict_to_be_matched_to = simplify_strings(list_to_be_matched_to, True, simplified)
+        list_to_be_matched_to = list(dict_to_be_matched_to.keys())
+        _check_uniqueness_of_entries(list_to_be_matched_to, "list_to_be_matched_to-simplified")
+
+    match = _find_direct_matches(list_for_matching, list_to_be_matched_to)
+    no_match = set()
+    similarities = _calculate_similarities_listed_by_list_for_matching_entry(list_for_matching, list_to_be_matched_to)
+
+    print(
+        "If first entry matches, hit enter."
+        "\nIf another entry matches, type correlating number and hit enter."
+        "\nIf none match, press 'n' and enter."
+        "\nFor stop matching a entry of list_for_matching, simply type 'break' and hit enter.\n"
+    )
+    for entry_a in similarities:
+        similarities_of_entry_a = list(similarities[entry_a].keys())
+        if len(similarities_of_entry_a) == 1:
+            similarities_of_entry_a.insert(0, 1)
+        if not (similarities_of_entry_a[0] - similarities_of_entry_a[1]) > minimal_distance_for_automatic_matching or \
+                len(similarities[entry_a][similarities_of_entry_a[0]]) != 1:
+
+            decreasing_matches = list()
+            for similarity in similarities[entry_a]:
+                for entry_b in similarities[entry_a][similarity]:
+                    decreasing_matches.append((similarity, entry_b))
+
+            number_to_show, characters, longest_string = get_print_setting()
+
+            first_print_statement()
+
+            answer = input("match? ")
+            if answer == "":
+                match[entry_a] = decreasing_matches[0][1]
+            elif answer == "break":
+                continue
+
+            else:
+                try:
+                    match[entry_a] = decreasing_matches[0][int(answer)]
+                except ValueError:
+                    # ToDo as for no_match, try again or further matching?
+                    further_print_statements(number_to_show)
+
+            continue
+
+        matched_entry = similarities[entry_a][similarities_of_entry_a[0]].pop()
+        if print_auto_matched:
+            print(
+                f"automatically matched: {entry_a} - {matched_entry}"
+            )
+        match[entry_a] = matched_entry
+
+        if entry_a not in match:
+            no_match.add(entry_a)
+            logging.warning(
+                f'no similarity for "{entry_a}" above {similarity_limit_for_manual_checking * 100}% similarity'
+            )
+
+    no_match = set(list_for_matching).difference(set(match))
+
+    if simplified:
+        match = {dict_for_matching[key]: dict_to_be_matched_to[value] for key, value in match.items()}
         no_match = {dict_for_matching[key] for key in no_match}
 
     return match, no_match
