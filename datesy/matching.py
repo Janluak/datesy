@@ -394,12 +394,15 @@ def __match_handler(
         list_to_be_matched_to = list(dict_to_be_matched_to.keys())
         _check_uniqueness_of_entries(list_to_be_matched_to, "list_to_be_matched_to-simplified")
 
+    match = _find_direct_matches(list_for_matching, list_to_be_matched_to)
+
     if variant == "comprehensive":
-        match, no_match = __match_comprehensive(list_for_matching, list_to_be_matched_to)
+        match, no_match = __match_comprehensive(list_for_matching, list_to_be_matched_to, match)
     elif variant == "manual_selection":
         match, no_match = __match_similar_with_manual_selection(
             list_for_matching,
             list_to_be_matched_to,
+            match,
             minimal_distance_for_automatic_matching=minimal_distance_for_automatic_matching,
             print_auto_matched=False,
             similarity_limit_for_manual_checking=0.6,
@@ -408,6 +411,7 @@ def __match_handler(
         match, no_match = __match_similar_with_manual_selection(
             list_for_matching,
             list_to_be_matched_to,
+            match,
             minimal_distance_for_automatic_matching=0,
             print_auto_matched=print_auto_matched,
             similarity_limit_for_manual_checking=similarity_limit_for_manual_checking,
@@ -424,8 +428,9 @@ def __match_handler(
 def __match_comprehensive(
         list_for_matching,
         list_to_be_matched_to,
+        match
 ):
-    match = _find_direct_matches(list_for_matching, list_to_be_matched_to)
+
     similarities = _calculate_similarities_listed_by_similarity(list_for_matching, list_to_be_matched_to)
 
     df = _create_similarity_dataframe(similarities)
@@ -519,6 +524,7 @@ def __match_comprehensive(
 def __match_similar_with_manual_selection(
         list_for_matching,
         list_to_be_matched_to,
+        match,
         minimal_distance_for_automatic_matching=0.1,
         print_auto_matched=False,
         similarity_limit_for_manual_checking=0.6,
@@ -639,7 +645,6 @@ def __match_similar_with_manual_selection(
         except IndexError:
             pass
 
-    match = _find_direct_matches(list_for_matching, list_to_be_matched_to)
     no_match = set()
     similarities = _calculate_similarities_listed_by_list_for_matching_entry(list_for_matching, list_to_be_matched_to)
 
