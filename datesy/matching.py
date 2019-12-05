@@ -85,7 +85,7 @@ def match_comprehensive(
         Iterable of strings which shall be matched
     list_to_be_matched_to : list, set
         Iterable of stings which shall be matched to
-    simplified : False, "capital", "separators", "all", list, str
+    simplified : False, "capital", "separators", "all", list, str, optional
         For reducing the values by all small letters or unifying & deleting separators `separators`
         or any other list of strings provided
 
@@ -125,15 +125,15 @@ def match_similar_with_manual_selection(
         Iterable of strings which shall be matched
     list_to_be_matched_to : list, set
         Iterable of stings which shall be matched to
-    simplified : False, "capital", "separators", "all", list, str
+    simplified : False, "capital", "separators", "all", list, str, optional
         For reducing the values by all small letters or unifying & deleting separators `separators`
         or any other list of strings provided
-    print_auto_matched : bool
+    print_auto_matched : bool, optional
         Printing the matched entries during process (most likely for debugging)
-    minimal_distance_for_automatic_matching : float
+    minimal_distance_for_automatic_matching : float, optional
         If there is a vast difference between the most and second most matching value, automatically matching is provided
         This parameter provides the similarity distance to be reached for automatically matching
-    similarity_limit_for_manual_checking : float
+    similarity_limit_for_manual_checking : float, optional
         For not showing/matching the most irrelevant match which could exist
 
     Returns
@@ -175,12 +175,12 @@ def ease_match_similar(
         Iterable of strings which shall be matched
     list_to_be_matched_to : list, set
         Iterable of stings which shall be matched to
-    simplified : False, "capital", "separators", "all", list, str
+    simplified : False, "capital", "separators", "all", list, str, optional
         For reducing the values by all small letters or unifying & deleting separators `separators`
         or any other list of strings provided
-    print_auto_matched : bool
+    print_auto_matched : bool, optional
         Printing the matched entries during process (most likely for debugging)
-    similarity_limit_for_matching : float
+    similarity_limit_for_matching : float, optional
         For not matching the most irrelevant match which could exist
 
     Returns
