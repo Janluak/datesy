@@ -13,7 +13,7 @@ For further guidance and help look at the documentation:
 
 ## Documentation
 
-Pleas find the documentation here: [documentation](https://datesy.readthedocs.io/en/latest/)
+Please find the documentation here: [documentation](https://datesy.readthedocs.io/en/latest/)
 
 ## Requests & contribution
 If you desire anything changed in the package, need another feature please just create an issue.
