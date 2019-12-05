@@ -75,15 +75,26 @@ def match_comprehensive(
         simplified=False,
 ):
     """
+    Return a dictionary with ``list_for_matching`` as keys and ``list_to_be_matched_to`` as values based on most similarity.
+    All values of both iterables get compared to each other and highest similarities are picked.
+    Slower than `datesy.matching.ease_match_similar` but more precise.
 
     Parameters
     ----------
-    list_for_matching
-    list_to_be_matched_to
-    simplified
+    list_for_matching : list, set
+        Iterable of strings which shall be matched
+    list_to_be_matched_to : list, set
+        Iterable of stings which shall be matched to
+    simplified : False, "capital", "separators", "all", list, str
+        For reducing the values by all small letters or unifying & deleting separators `separators`
+        or any other list of strings provided
 
     Returns
     -------
+    match : dict
+        `{value_for_matching: value_to_be_mapped_to}`
+    no_match : set
+        A set of all values from `list_for_matching` that could not be matched
 
     """
     match, no_match = __match_handler(
@@ -104,30 +115,33 @@ def match_similar_with_manual_selection(
         similarity_limit_for_manual_checking=0.6,
 ):
     """
+    Return a dictionary with ``list_for_matching`` as keys and ``list_to_be_matched_to`` as values based on most similarity.
+    All possible matches not matched automatically (set limit with `minimal_distance_for_automatic_matching`) can be handled interactively.
+    Similarity distance for stopping the matching is set by `distance_for_automatic_vs_manual_matching`.
 
     Parameters
     ----------
-    list_for_matching : list
-        List of strings which shall be matched
-    list_to_be_matched_to : list
-        List of stings which shall be matched to
+    list_for_matching : list, set
+        Iterable of strings which shall be matched
+    list_to_be_matched_to : list, set
+        Iterable of stings which shall be matched to
     simplified : False, "capital", "separators", "all", list, str
         For reducing the values by all small letters or unifying & deleting separators `separators`
         or any other list of strings provided
     print_auto_matched : bool
-        Especially for human rechecking: printing the automatically matched cases
+        Printing the matched entries during process (most likely for debugging)
     minimal_distance_for_automatic_matching : float
         If there is a vast difference between the most and second most matching value, automatically matching is provided
         This parameter provides the similarity distance to be reached for automatically matching
     similarity_limit_for_manual_checking : float
-        For not showing the most irrelevant match there could possibly exist
+        For not showing/matching the most irrelevant match which could exist
 
     Returns
     -------
     match : dict
         `{value_for_matching: value_to_be_mapped_to}`
-    no_match : list
-        A list of all values that could not be matched
+    no_match : set
+        A set of all values from `list_for_matching` that could not be matched
 
     """
     match, no_match = __match_handler(
@@ -152,30 +166,29 @@ def ease_match_similar(
     """
     Return a dictionary with ``list_for_matching`` as keys and ``list_to_be_matched_to`` as values based on most similarity.
     Matching twice to the same value is possible!
-    If auto_match_all is set to False, human interface is able to decline a match. Similarity distance for switching
-    between automatic matches and manual is set by `distance_for_automatic_vs_manual_matching`.
+    Similarity distance for stopping the matching is set by `distance_for_automatic_vs_manual_matching`.
+    Faster than `datesy.matching.match_comprehensive` but when having very similar strings more likely to contain errors.
 
     Parameters
     ----------
-    list_for_matching : list
-        List of strings which shall be matched
-    list_to_be_matched_to : list
-        List of stings which shall be matched to
+    list_for_matching : list, set
+        Iterable of strings which shall be matched
+    list_to_be_matched_to : list, set
+        Iterable of stings which shall be matched to
     simplified : False, "capital", "separators", "all", list, str
         For reducing the values by all small letters or unifying & deleting separators `separators`
         or any other list of strings provided
     print_auto_matched : bool
-        Especially for human rechecking: printing the automatically matched cases
+        Printing the matched entries during process (most likely for debugging)
     similarity_limit_for_matching : float
-        If there is a vast difference between the most and second most matching value, automatically matching is provided
-        This parameter provides the similarity distance to be reached for automatically matching
+        For not matching the most irrelevant match which could exist
 
     Returns
     -------
     match : dict
         `{value_for_matching: value_to_be_mapped_to}`
-    no_match : list
-        A list of all values that could not be matched
+    no_match : set
+        A set of all values from `list_for_matching` that could not be matched
 
     """
     match, no_match = __match_handler(
@@ -229,9 +242,9 @@ def _find_direct_matches(list_for_matching, list_to_be_matched_to):
 
     Parameters
     ----------
-    list_for_matching : [list, set]
+    list_for_matching : list, set
         iterable containing the keys
-    list_to_be_matched_to : [list, set]
+    list_to_be_matched_to : list, set
         iterable containing the values to match to the keys
 
     Returns
