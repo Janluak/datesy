@@ -1,8 +1,17 @@
 import logging, os, glob, re
 
+__doc__ = (
+    "The file_selection module provides multiple supporting functions for interaction with files"
+)
+
+__all__ = ["get_latest_file_from_directory",
+           "get_file_list_from_directory",
+           "return_file_list_if_path",
+           "check_file_name_ending"]
+
 
 def return_file_list_if_path(
-    path, file_ending=None, pattern=None, regex=None, return_always_list=False
+        path, file_ending=None, pattern=None, regex=None, return_always_list=False
 ):
     """
     Return all files in directory (optionally specified with options) if path is a directory
@@ -154,7 +163,7 @@ def get_file_list_from_directory(directory, file_ending=None, pattern=None, rege
 
 
 def get_latest_file_from_directory(
-    directory, file_ending=None, pattern=None, regex=None
+        directory, file_ending=None, pattern=None, regex=None
 ):
     """
     Return the latest file_name (optionally filtered) from a directory
