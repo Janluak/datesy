@@ -13,6 +13,7 @@ __all__ = [
     "load_all_sheets",
     "load_these_files",
     "load_all_files",
+    "load",
     "write_single_sheet_from_DataFrame",
     "write_multi_sheet_from_DataFrames",
     "write_single_sheet_from_dict",
