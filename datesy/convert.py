@@ -177,7 +177,7 @@ def dict_to_pandas_data_frame(
     from pandas import DataFrame
 
     if not main_key_name:
-        data, main_key = _cast_main_key_name(data)
+        data, main_key_name = _cast_main_key_name(data)
 
     if not order:
         if not inverse:
