@@ -188,6 +188,8 @@ def get_latest_file_from_directory(
     """
 
     files = get_file_list_from_directory(directory, file_ending, pattern, regex)
+    if not files:
+        raise ValueError(f"no files in directory found")
     latest_file = max(files, key=os.path.getctime)
 
     return latest_file
