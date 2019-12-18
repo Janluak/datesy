@@ -140,7 +140,7 @@ def dict_to_rows(
 
 
 def dict_to_pandas_data_frame(
-    data, data_as_index=False, main_key_name=None, order=None, inverse=False
+    data, main_key_name=None, order=None, inverse=False
 ):
     """
     Convert a dictionary to pandas.DataFrame
@@ -149,8 +149,6 @@ def dict_to_pandas_data_frame(
     ----------
     data : dict
         dictionary of handling
-    data_as_index : bool, optional
-        if the first column shall be used as index column
     main_key_name : str, optional
         if the json or dict does not have the main key as a single `{main_element : dict}` present, it needs to be specified
     order : dict, list, optional
@@ -166,8 +164,6 @@ def dict_to_pandas_data_frame(
     """
     if not isinstance(data, dict):
         raise TypeError
-    if not isinstance(data_as_index, bool):
-        raise TypeError
     if main_key_name and not isinstance(main_key_name, str):
         raise TypeError
     if not isinstance(inverse, bool):
@@ -179,25 +175,18 @@ def dict_to_pandas_data_frame(
     if not main_key_name:
         data, main_key_name = _cast_main_key_name(data)
 
-    if not order:
-        if not inverse:
-            data_frame = DataFrame.from_dict(data, orient="index")
-        else:
-            data_frame = DataFrame.from_dict(data)
-        order = list(data_frame)
-
+    if not inverse:
+        data_frame = DataFrame.from_dict(data, orient="index")
     else:
-        order = _create_sorted_list_from_order(order)
-        if not inverse:
-            data_frame = DataFrame.from_dict(data, orient="index", columns=order)
-        else:
-            data_frame = DataFrame.from_dict(data, columns=order)
-
-    if data_as_index:
-        data_frame[main_key_name] = data_frame.index
-        data_frame.set_index(order[0], inplace=True)
+        data_frame = DataFrame.from_dict(data)
 
     data_frame.index.name = main_key_name
+
+    if order:
+        data_frame[main_key_name] = data_frame.index
+        order = _create_sorted_list_from_order(order)
+        data_frame = data_frame[order]
+        data_frame.set_index(order[0], inplace=True)
 
     return data_frame
 

@@ -294,7 +294,8 @@ def write_single_sheet_from_dict(
     """
     from ..convert import dict_to_pandas_data_frame
 
-    data_frame = dict_to_pandas_data_frame(data, False, main_key_name, order, inverse)
+    data_frame = dict_to_pandas_data_frame(data, main_key_name, order, inverse)
+
     write_single_sheet_from_DataFrame(
         file_name=file_name, data_frame=data_frame, sheet_name=sheet, auto_size_cells=auto_size_cells
     )
@@ -321,6 +322,6 @@ def write_multi_sheet_from_dict_of_dicts(file_name, data, order=None, auto_size_
 
     from ..convert import dict_to_pandas_data_frame
 
-    data_frames = {key: dict_to_pandas_data_frame(data[key], False) for key in data}
+    data_frames = {key: dict_to_pandas_data_frame(data[key]) for key in data}
 
     write_multi_sheet_from_DataFrames(file_name, data_frames, order, auto_size_cells=auto_size_cells)
