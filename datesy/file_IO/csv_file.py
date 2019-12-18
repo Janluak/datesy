@@ -258,8 +258,8 @@ def write(
     ----------
     file_name : str
         the file_name to save under. if no ending is provided, saved as `file_name.csv`
-    data : dict
-        the dictionary to be saved as csv
+    data : dict, list
+        the dictionary or list to be saved as csv
     main_key_name : str, optional
         if the json or dict does not have the main key as a single key present (``{main_element_name: dict}``), it needs to be specified
     main_key_position : int, optional
