@@ -13,6 +13,7 @@ Datesy, making DATa handling EaSY – the intro to data handling in python
  intro
  datesy
  examples
+ release_notes
 
 
 Indices and tables

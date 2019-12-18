@@ -15,9 +15,15 @@ For further guidance and help look at the documentation:
 
 Please find the documentation here: [documentation](https://datesy.readthedocs.io/en/latest/)
 
+## Release Notes
+Please find all but the latest few release notes here: [release notes](https://datesy.readthedocs.io/en/latest/release_notes.html)
+
+### 0.7.0
+* initial commit
+
+
 ## Requests & contribution
 If you desire anything changed in the package, need another feature please just create an issue.
 
 I am happy for everybody wanting to contribute. Simplest way is to start writing issues, forking the repository and contacting me ;)
-
 
