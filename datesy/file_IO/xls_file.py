@@ -1,7 +1,7 @@
 from pandas import read_excel, ExcelFile
 from .file_selection import *
 from openpyxl.styles import Alignment
-import re
+import logging, re, os
 
 __doc__ = (
     "The xls_file module takes care of all I/O interactions concerning xls(x) files"
