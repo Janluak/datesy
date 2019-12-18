@@ -1,4 +1,5 @@
 from .file_selection import *
+import os, logging
 
 __doc__ = "The xml_file module takes care of all I/O interactions concerning xml files"
 
