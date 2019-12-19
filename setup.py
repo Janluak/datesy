@@ -32,5 +32,5 @@ setup(
         "Programming Language :: Python :: 3.6",
     ],
     # https://pypi.org/pypi?%3Aaction=list_classifiers
-    install_requires=["pandas", "xmltodict", "openpyxl", "xlrd"],
+    install_requires=["pandas", "xmltodict", "openpyxl", "xlrd", "mysql-connector-python"],
 )
