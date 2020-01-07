@@ -1,5 +1,5 @@
 from collections import OrderedDict
-import logging
+import logging, re
 import atexit
 
 __all__ = ["Database", "Table"]
@@ -125,14 +125,14 @@ class Table:
 
     def __getitem__(self, key):
         """
-        Get rows where key matches the defined column
+        Get rows where key matches the primary column
 
         works like ``database.table[key]``
 
         Parameters
         ----------
         key : any
-            matching value in column
+            matching value in primary column
 
         Returns
         -------
@@ -140,18 +140,11 @@ class Table:
             tuple items representing every matched row in database
 
         """
-        try:
-            column = self._column_for_request
-        except StopIteration:
-            column = self.primary
-            if isinstance(column, type(None)):
-                column = next(iter(self.schema.keys()))
 
-        statement = f"SELECT {self.__columns_string()} FROM {self._table} WHERE {column}={key}"
-        self._db._cursor.execute(statement)
-        return self.__read()
+        query = self._build_query(f"{self.primary}={key}")
+        return self._execute_query(query)
 
-    def get_where(self, **kwargs):
+    def get_where(self, *args, **kwargs):
         """
         Get rows where value matches the defined column: ``columns=key``
 
@@ -166,15 +159,103 @@ class Table:
             tuple items representing every matched row in database
 
         """
-        if len(kwargs) == 1:
+        if len(kwargs) == 1 and not args:
             [self._column_for_request] = kwargs.keys()
             [value] = kwargs.values()
             return self.__getitem__(value)
 
-        raise NotImplemented("coming soon")
+        query = self._build_query(*args, **kwargs)
+        return self._execute_query(query)
 
-    def _build_query(self, **kwargs):
-        raise NotImplemented("coming soon")
+    def _build_query(self, *args, **kwargs):
+        """
+        Compose the query for the desired task
+
+        Parameters
+        ----------
+        args : str
+            strings with the statements. E.g. ``"column > 351"``
+        kwargs
+            if a column shall have exactly a value
+
+        Returns
+        -------
+        str
+            query able to execute
+
+        """
+        # collecting all where statements
+        where_statements = list()
+
+        # casting all equal statements
+        for kw in kwargs:
+            where_statements.append(f"`{kw}` = {kwargs[kw]}")
+
+        # casting all other statements
+        for arg in args:
+            elements = arg.split(" ")
+
+            # word based statement (like `"123" in column_name`)
+            if len(elements) > 2 and not any(i in arg for i in "<>=!"):
+                column = elements[-1]
+
+                if column not in self.schema.keys():
+                    raise ValueError(f"column {column} not in table")
+
+                value = elements[0]
+                commands = elements[1:-1]
+                if "not" in commands:
+                    boolean = False
+                else:
+                    boolean = True
+
+                where_statements.append(self._query_contains(column, value, boolean))   # db specific -> must be defined in inherited class
+
+            # special character based statement (like `column_name > 123`)
+            else:
+                # either special character or word based statements allowed
+                if " not " in arg or " in " in arg:
+                    raise ValueError("please only use words like `in`, & `not` or the command_characters {<, >, !, =}")
+
+                # craft column name and value separated by operators
+                column, value = [e for e in re.split(r"[><=! ]", arg) if e]
+
+                if column not in self.schema.keys():
+                    raise ValueError(f"column {column} not in table")
+
+                # negation check
+                if "<>" in arg or "!" in arg:
+                    boolean = False
+                else:
+                    boolean = True
+
+                # Null statements
+                if value.lower() == "null" or value == None:
+                    where_statements.append(self._query_null(column, boolean))  # db specific -> must be defined in inherited class
+
+                # other statements
+                else:
+                    arg = arg.replace(column, "").replace(value, "")
+                    if "=" in arg:
+                        command = "=" if boolean else self._query_unequals  # db specific -> must be defined in inherited class
+                    elif ">" in arg:
+                        command = ">"
+                    elif "<" in arg:
+                        command = "<"
+                    else:
+                        raise ValueError("please use only these command characters: {<, >, !, =}")
+
+                    where_statements.append(f"`{column}` {command} {value}")
+
+        where_statement = " AND ".join(where_statements)
+
+        query = f"SELECT {self.__columns_string()} FROM {self._table} WHERE " + where_statement
+        logging.info(f"composed query: {query}")
+        return query
+
+    def _execute_query(self, query):
+        self._db._cursor.execute(query)
+        return self.__read()
 
     def __setitem__(self, key, row):
         raise NotImplemented("coming soon")
