@@ -25,148 +25,6 @@ class Table:
 
         self.working_columns = set()  # desired columns for interaction
 
-    def __get_column_for_request(self):
-        return next(self.__column_for_request)
-
-    def __set_column_for_request(self, column):
-        if not isinstance(column, str):
-            raise ValueError("column not type str")
-        self.__column_for_request = iter([column])
-
-    _column_for_request = property(__get_column_for_request, __set_column_for_request)
-
-    @property
-    def schema(self):
-        """
-        Get schema of table
-
-        Returns
-        -------
-        OrderedDict
-            dictionary containing the column as key and schema_info as dictionary for every column
-
-        """
-        if not self.__schema:
-            self._db._cursor.execute(self._schema_update_query)
-            for row in self._db._cursor:
-                # ToDo check for more available data via SQL/maybe putting to db specific subclass
-                self.__schema[row[0]] = {"type": row[1], "null": row[2], "key": row[3], "default": row[4],
-                                         "extra": row[5]}
-        return self.__schema
-
-    @property
-    def primary(self):
-        """
-        Get the primary key of this table
-
-        Returns
-        -------
-        str, None
-            the primary column as string if one exists
-
-        """
-        if isinstance(self.__primary, str) and not self.__primary:
-            for column in self.schema:
-                if self.schema[column]["key"] == "PRI":
-                    self.__primary = column
-                    break
-            if not self.__primary:
-                self.__primary = None  # table has no primary key
-
-        return self.__primary
-
-    def update_schema_data(self):
-        """
-        Update the schema of the table
-
-        Returns
-        -------
-        OrderedDict
-            dictionary containing the column as key and schema_info as dictionary for every column
-
-        """
-        self.__schema = OrderedDict()
-        self.__primary = str()
-        return self.schema
-
-    def update_primary_data(self):
-        """
-        Update the primary key of the table
-
-        Returns
-        -------
-        str, None
-            the primary column as string if one exists
-        """
-        self.__schema = OrderedDict()
-        self.__primary = str()
-        return self.primary
-
-    def __columns_string(self, desired_columns=False):
-        # if no columns specified
-        if not self.working_columns and not desired_columns:
-            return "*"
-
-        if not set(self.working_columns).issubset(set(self.schema.keys())):
-            raise ValueError("not all specified columns are in table")
-
-        if self.working_columns:
-            desired_columns = self.working_columns
-
-        columns_string = f"""{str([i for i in desired_columns]).replace("', '", ", ")[2:-2]}"""
-
-        return columns_string
-
-    def __read(self):
-        rows = list()
-        for row in self._db._cursor:
-            rows.append(row)
-        return rows
-
-    def __getitem__(self, key):
-        """
-        Get rows where key matches the primary column
-
-        works like ``database.table[key]``
-
-        Parameters
-        ----------
-        key : any
-            matching value in primary column
-
-        Returns
-        -------
-        list
-            tuple items representing every matched row in database
-
-        """
-
-        query = self._build_query(f"{self.primary}={key}")
-        return self._execute_query(query)
-
-    def get_where(self, *args, **kwargs):
-        """
-        Get rows where value matches the defined column: ``columns=key``
-
-        Parameters
-        ----------
-        **kwargs
-            column = key values
-
-        Returns
-        -------
-        list
-            tuple items representing every matched row in database
-
-        """
-        if len(kwargs) == 1 and not args:
-            [self._column_for_request] = kwargs.keys()
-            [value] = kwargs.values()
-            return self.__getitem__(value)
-
-        query = self._build_query(*args, **kwargs)
-        return self._execute_query(query)
-
     def _build_query(self, *args, **kwargs):
         """
         Compose the query for the desired task
@@ -255,7 +113,146 @@ class Table:
 
     def _execute_query(self, query):
         self._db._cursor.execute(query)
-        return self.__read()
+        rows = list()
+        for row in self._db._cursor:
+            rows.append(row)
+        return rows
+
+    def __columns_string(self, desired_columns=False):
+        # if no columns specified
+        if not self.working_columns and not desired_columns:
+            return "*"
+
+        if not set(self.working_columns).issubset(set(self.schema.keys())):
+            raise ValueError("not all specified columns are in table")
+
+        if self.working_columns:
+            desired_columns = self.working_columns
+
+        columns_string = f"""{str([i for i in desired_columns]).replace("', '", ", ")[2:-2]}"""
+
+        return columns_string
+
+    def __get_column_for_request(self):
+        return next(self.__column_for_request)
+
+    def __set_column_for_request(self, column):
+        if not isinstance(column, str):
+            raise ValueError("column not type str")
+        self.__column_for_request = iter([column])
+
+    _column_for_request = property(__get_column_for_request, __set_column_for_request)
+
+    @property
+    def schema(self):
+        """
+        Get schema of table
+
+        Returns
+        -------
+        OrderedDict
+            dictionary containing the column as key and schema_info as dictionary for every column
+
+        """
+        if not self.__schema:
+            self._db._cursor.execute(self._schema_update_query)
+            for row in self._db._cursor:
+                # ToDo check for more available data via SQL/maybe putting to db specific subclass
+                self.__schema[row[0]] = {"type": row[1], "null": row[2], "key": row[3], "default": row[4],
+                                         "extra": row[5]}
+        return self.__schema
+
+    @property
+    def primary(self):
+        """
+        Get the primary key of this table
+
+        Returns
+        -------
+        str, None
+            the primary column as string if one exists
+
+        """
+        if isinstance(self.__primary, str) and not self.__primary:
+            for column in self.schema:
+                if self.schema[column]["key"] == "PRI":
+                    self.__primary = column
+                    break
+            if not self.__primary:
+                self.__primary = None  # table has no primary key
+
+        return self.__primary
+
+    def update_schema_data(self):
+        """
+        Update the schema of the table
+
+        Returns
+        -------
+        OrderedDict
+            dictionary containing the column as key and schema_info as dictionary for every column
+
+        """
+        self.__schema = OrderedDict()
+        self.__primary = str()
+        return self.schema
+
+    def update_primary_data(self):
+        """
+        Update the primary key of the table
+
+        Returns
+        -------
+        str, None
+            the primary column as string if one exists
+        """
+        self.__schema = OrderedDict()
+        self.__primary = str()
+        return self.primary
+
+    def __getitem__(self, key):
+        """
+        Get rows where key matches the primary column
+
+        works like ``database.table[key]``
+
+        Parameters
+        ----------
+        key : any
+            matching value in primary column
+
+        Returns
+        -------
+        list
+            tuple items representing every matched row in database
+
+        """
+
+        query = self._build_query(f"{self.primary}={key}")
+        return self._execute_query(query)
+
+    def get_where(self, *args, **kwargs):
+        """
+        Get rows where value matches the defined column: ``columns=key``
+
+        Parameters
+        ----------
+        **kwargs
+            column = key values
+
+        Returns
+        -------
+        list
+            tuple items representing every matched row in database
+
+        """
+        if len(kwargs) == 1 and not args:
+            [self._column_for_request] = kwargs.keys()
+            [value] = kwargs.values()
+            return self.__getitem__(value)
+
+        query = self._build_query(*args, **kwargs)
+        return self._execute_query(query)
 
     def __setitem__(self, key, row):
         raise NotImplemented("coming soon")
