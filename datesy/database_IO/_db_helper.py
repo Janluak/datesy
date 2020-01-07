@@ -364,7 +364,7 @@ class Database:
         hidden_values = {table_name for table_name in self.tables if "__" == table_name[0:2] }
         if any("__" == table_name[0:2] for table_name in self.tables):
             logging.warning(
-                f"table_name in database {self._database} contains '__' in beginning -> not accessable with `Python`"
+                f"table_name in database {self._database} contains '__' in beginning -> not accessable with `Python` "
                 f"please disable auto_creation or rename '{hidden_values}' in database"
             )
 
