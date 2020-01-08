@@ -25,7 +25,7 @@ class Table:
 
         self.working_columns = set()  # desired columns for interaction
 
-    def _build_query(self, *args, **kwargs):
+    def _build_where_query(self, *args, **kwargs):
         """
         Compose the query for the desired task
 
@@ -93,13 +93,11 @@ class Table:
 
                 # other statements
                 else:
-                    arg = arg.replace(column, "").replace(value, "")
-                    if "=" in arg:
+                    arg = arg.replace(column, "").replace(value, "").replace(" ", "")
+                    if "=" in arg and not any(c in arg for c in [">", "<"]):
                         command = "=" if boolean else self._query_unequals  # db specific -> must be defined in inherited class
-                    elif ">" in arg:
-                        command = ">"
-                    elif "<" in arg:
-                        command = "<"
+                    elif any(c in arg for c in [">", "<", "="]) and len(arg) < 3:
+                        command = arg
                     else:
                         raise ValueError("please use only these command characters: {<, >, !, =}")
 
@@ -228,7 +226,7 @@ class Table:
 
         """
 
-        query = self._build_query(f"{self.primary}={key}")
+        query = self._build_where_query(f"{self.primary}={key}")
         return self._execute_query(query)
 
     def get_where(self, *args, **kwargs):
@@ -251,7 +249,7 @@ class Table:
             [value] = kwargs.values()
             return self.__getitem__(value)
 
-        query = self._build_query(*args, **kwargs)
+        query = self._build_where_query(*args, **kwargs)
         return self._execute_query(query)
 
     def __setitem__(self, key, row):
