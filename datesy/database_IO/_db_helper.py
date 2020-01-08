@@ -105,7 +105,7 @@ class Table:
 
         where_statement = " AND ".join(where_statements)
 
-        query = f"SELECT {self.__columns_string()} FROM {self._table} WHERE " + where_statement
+        query = f" WHERE " + where_statement
         logging.info(f"composed query: {query}")
         return query
 
@@ -229,7 +229,7 @@ class Table:
         if not self.primary:
             raise AttributeError("table has no primary_key column. operation not permitted")
 
-        query = self._build_where_query(f"{self.primary}={key}")
+        query = f"SELECT {self.__columns_string()} FROM {self._table}" + self._build_where_query(f"{self.primary}={key}")
         return self._execute_query(query)
 
     def get_where(self, *args, **kwargs):
@@ -252,7 +252,7 @@ class Table:
             [value] = kwargs.values()
             return self.__getitem__(value)
 
-        query = self._build_where_query(*args, **kwargs)
+        query = f"SELECT {self.__columns_string()} FROM {self._table}" + self._build_where_query(*args, **kwargs)
         return self._execute_query(query)
 
     def __setitem__(self, key, row):
