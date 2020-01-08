@@ -226,6 +226,9 @@ class Table:
 
         """
 
+        if not self.primary:
+            raise AttributeError("table has no primary_key column. operation not permitted")
+
         query = self._build_where_query(f"{self.primary}={key}")
         return self._execute_query(query)
 
