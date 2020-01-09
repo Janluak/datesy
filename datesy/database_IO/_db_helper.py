@@ -418,6 +418,8 @@ class Database:
 
     """
     def __init__(self, host, port, user, password, database, auto_creation=False):
+        import warnings
+        warnings.warn("\n\nDatabase interface still in development. Changes may apply\n", UserWarning)
         self._host = host
         self._port = port
         self._user = user
