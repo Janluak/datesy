@@ -347,7 +347,7 @@ class Table:
 
         query = f"UPDATE {self._table} SET {set_statement}"
         if where_statement:
-            query += f" {where_statement}"
+            query += where_statement
 
         logging.info(query)
         self._execute_query(query)
@@ -366,10 +366,25 @@ class Table:
         self._execute_query(query)
 
     def __delitem__(self, key):
-        raise NotImplemented("coming soon")
+        if not self.primary:
+            raise AttributeError("table has no primary_key column. operation not permitted")
 
-    def delete_where(self, key, where):
-        raise NotImplemented("coming soon")
+        self.delete_where(**{self.primary: key})
+
+    def delete_where(self, *args, **kwargs):
+        if not args and not kwargs:
+            raise OverflowError("Please use truncate to delete the hole table")
+
+        query = f"DELETE FROM {self._table} " + self._build_where_query(*args, **kwargs)
+        logging.info(query)
+        self._execute_query(query)
+
+    def _execute_raw_query(self, query):
+        self._execute_query(query)
+
+    # ToDo implement TRUNCATE
+
+    # ToDo implement ORDER BY as addition to query as constant added string until changed?
 
 
 class Database:
