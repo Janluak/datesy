@@ -324,15 +324,16 @@ class Table:
         elif isinstance(row, dict):
             for key in set(set(self.schema.keys())).difference(row.keys()).difference(where_columns):
                 row[key] = self.schema[key]["default"]
-        self.update_where(row, primary_key=primary_key, set_new=True, *args, **kwargs)
+        self.update_where(row, primary_key=primary_key, *args, **kwargs)
 
-    def update_where(self, row: list, primary_key=None, set_new=False, *args, **kwargs):
+    def update_where(self, row: (list, dict), primary_key=None, *args, **kwargs):
         if primary_key:
+            kwargs[self.primary] = primary_key
             columns, row = self._row_handling(row, primary_key)
         else:
             columns, row = self._row_handling(row)
 
-        if set_new:
+        if self.primary in columns:
             primary_pos = columns.index(self.primary)
             del columns[primary_pos]
             del row[primary_pos]
