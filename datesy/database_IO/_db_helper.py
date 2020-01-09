@@ -413,6 +413,9 @@ class Database:
         specific information to database, see details to each database
 
     """
+    import warnings
+    warnings.warn("\n\nDatabase interface still in development. Changes may apply\n", UserWarning)
+
     def __init__(self, host, port, user, password, database, auto_creation=False):
         self._host = host
         self._port = port
