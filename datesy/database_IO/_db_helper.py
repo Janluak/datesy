@@ -353,7 +353,7 @@ class Table:
         logging.info(query)
         self._execute_query(query)
 
-    def append(self, row: (list, dict), primary_key=None):
+    def insert(self, row: (list, dict), primary_key=None):
 
         if isinstance(row, list):
             if primary_key:
