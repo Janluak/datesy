@@ -387,6 +387,10 @@ class Table:
 
     # ToDo implement ORDER BY as addition to query as constant added string until changed?
 
+    # ToDo implement min/max
+
+    # ToDo implement is (not) NULL
+
 
 class Database:
     """
