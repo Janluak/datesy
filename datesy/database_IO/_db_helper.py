@@ -114,6 +114,7 @@ class Table:
         rows = list()
         for row in self._db._cursor:
             rows.append(row)
+        self._db._conn.commit()
         return rows
 
     def __columns_string(self, desired_columns=False):
@@ -255,11 +256,118 @@ class Table:
         query = f"SELECT {self.__columns_string()} FROM {self._table}" + self._build_where_query(*args, **kwargs)
         return self._execute_query(query)
 
-    def __setitem__(self, key, row):
-        raise NotImplemented("coming soon")
+    def _create_columns_string(self, columns):
+        return f"({str([column_name for column_name in columns])[1:-1]})".replace("'", "")
 
-    def set_where(self, row, **kwargs):
-        raise NotImplemented("coming soon")
+    def _create_row_string(self, row):
+        return f"({str(row)[1:-1]})"
+
+    def _row_handling(self, row: (list, dict), primary_key=None):
+        if isinstance(row, dict):
+            if primary_key:
+                row[self.primary] = primary_key
+            columns = list(row.keys())
+            row = [row[column] for column in columns]
+
+        elif isinstance(row, list):
+            columns = list()
+            for pos in range(len(row)):
+                if row[pos] != "":
+                    columns.append(list(self.schema.keys())[pos])
+            row = [element for element in row if element != ""]
+
+        else:
+            raise TypeError("row must be either list or dict")
+
+        return columns, row
+
+    def __setitem__(self, primary_key, row):
+        """
+
+        Parameters
+        ----------
+        primary_key : str, None
+            the key of the primary column. If None -> new row inserted
+        row : list, dict
+            the row data in either correct order or in a dict with column_name
+
+        Returns
+        -------
+
+        """
+        if not self.primary:
+            raise AttributeError("table has no primary_key column. operation not permitted")
+
+        if isinstance(row, list) and len(row) + 1 != len(self.schema):
+            raise ValueError("row must be same length as table (without primary key) with '' for emtpy values")
+
+        if self.__getitem__(primary_key):
+            if isinstance(row, list):
+                row.insert(0, primary_key)
+            elif isinstance(row, dict):
+                row[self.primary] = primary_key
+            self.set_where(row, primary_key=primary_key)
+        else:
+            self.append(row, primary_key)
+
+    def set_where(self, row, primary_key=None, *args, **kwargs):
+        where_columns = set(kwargs.keys())
+        if primary_key:
+            where_columns.add(self.primary)
+            kwargs[self.primary] = primary_key
+
+        # ToDo refactor argument parsing and use together with _built_where_query
+        for arg in args:
+            raise NotImplemented
+
+        if isinstance(row, list):
+            for pos in range(len(row)):
+                if row[pos] == "":
+                    if list(self.schema.keys())[pos] not in where_columns:
+                        row[pos] = self.schema[list(self.schema.keys())[pos]]["default"]
+        elif isinstance(row, dict):
+            for key in set(set(self.schema.keys())).difference(row.keys()).difference(where_columns):
+                row[key] = self.schema[key]["default"]
+        self.update_where(row, primary_key=primary_key, set_new=True, *args, **kwargs)
+
+    def update_where(self, row: list, primary_key=None, set_new=False, *args, **kwargs):
+        if primary_key:
+            columns, row = self._row_handling(row, primary_key)
+        else:
+            columns, row = self._row_handling(row)
+
+        if set_new:
+            primary_pos = columns.index(self.primary)
+            del columns[primary_pos]
+            del row[primary_pos]
+
+        set_statements = list()
+        for i in range(len(columns)):
+            set_statements.append(f"""{str(columns[i])} = {"'" +  str(row[i]) + "'" 
+                if not isinstance(row[i], type(None)) else 'NULL'}""")
+        set_statement = ", ".join(set_statements)
+
+        where_statement = self._build_where_query(*args, **kwargs)
+
+        query = f"UPDATE {self._table} SET {set_statement}"
+        if where_statement:
+            query += f" {where_statement}"
+
+        logging.info(query)
+        self._execute_query(query)
+
+    def append(self, row: (list, dict), primary_key=None):
+
+        if isinstance(row, list):
+            if primary_key:
+                row.insert(0, primary_key)
+            if len(row) != len(self.schema):
+                raise ValueError("row must be same length as table with '' for emtpy values")
+        columns, row = self._row_handling(row, primary_key)
+
+        query = f"INSERT INTO {self._table} {self._create_columns_string(columns)} VALUES {self._create_row_string(row)}"
+        logging.info(query)
+        self._execute_query(query)
 
     def __delitem__(self, key):
         raise NotImplemented("coming soon")
