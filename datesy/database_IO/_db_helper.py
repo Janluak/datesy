@@ -316,10 +316,6 @@ class Table:
             where_columns.add(self.primary)
             kwargs[self.primary] = primary_key
 
-        # ToDo refactor argument parsing and use together with _built_where_query
-        for arg in args:
-            raise NotImplemented
-
         if isinstance(row, list):
             for pos in range(len(row)):
                 if row[pos] == "":
