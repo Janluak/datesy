@@ -231,7 +231,12 @@ class Table:
             raise AttributeError("table has no primary_key column. operation not permitted")
 
         query = f"SELECT {self.__columns_string()} FROM {self._table}" + self._build_where_query(f"{self.primary}={key}")
-        return self._execute_query(query)
+        [row] = self._execute_query(query)
+
+        # ToDo return as object possible to be called either by position (like list) or by column_name
+        #  make each item in row settable
+
+        return row
 
     def get_where(self, *args, **kwargs):
         """
