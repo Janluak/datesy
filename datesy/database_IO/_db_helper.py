@@ -209,6 +209,25 @@ class Table:
         self.__primary = str()
         return self.primary
 
+    def _get_column_values(self, column):
+        query = f"SELECT {column} from {self._table}"
+        values = self._execute_query(query)
+        return [i[0] for i in values]
+
+    def __len__(self):
+        query = f"SELECT COUNT(*) FROM {self._table}"
+        return int(self._execute_query(query)[0][0])
+
+    def __iter__(self):
+        if self.primary:
+            self._keys = iter(self._get_column_values(self.primary))
+            return self._keys
+        else:
+            range_list = range(len(self))
+            return iter(self._execute_query(
+                f"SELECT * FROM `{self._table}` LIMIT 1 OFFSET {offset}")[0]
+                        for offset in range_list)
+
     def __getitem__(self, key):
         """
         Get rows where key matches the primary column
