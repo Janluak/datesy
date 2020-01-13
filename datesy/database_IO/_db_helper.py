@@ -1,8 +1,94 @@
 from collections import OrderedDict
-import logging, re
+import logging, re, inspect
 import atexit
 
 __all__ = ["Database", "Table"]
+
+
+class Row:
+    """
+    Representation of a database row entry
+
+    Parameters
+    ----------
+    table: Table
+        table belonging to
+    data: list, tuple, dict
+        data to represent
+    """
+
+    def __init__(self, table, data):
+        self.__table = table
+        self.__schema = table.schema
+        self.__columns = table.schema.keys()
+
+        if isinstance(data, (list, tuple)):
+            self.__content = OrderedDict()
+            pos = 0
+            for key in table.schema:
+                self.__content[key] = data[pos]
+                pos += 1
+
+        elif isinstance(data, (dict, OrderedDict)):
+            if not all(key in table.schema for key in data):
+                raise ValueError("columns of row not in table schema")
+            self.__content = data
+
+        else:
+            raise TypeError(f"data must be either list or dict, not {type(data)}")
+
+    def schema_validation(self, key, value):
+        # ToDo do local schema validation for saving time in connection to server?
+        return True
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self.__content[list(self.__columns)[key]]
+
+        elif isinstance(key, str):
+            return self.__content[key]
+
+        else:
+            raise TypeError("only int for position or str for column name allowed")
+
+    def __setitem__(self, column, value):
+        if isinstance(column, int):
+            column = list(self.__columns)[column]
+        elif not isinstance(column, str):
+            raise TypeError("only int for position or str for column name allowed")
+
+        if not column != self.__table.primary:
+            raise NotImplemented("currently not possible to change primary key with builtins. please copy row and insert as new one")
+        if not self.schema_validation(column, value):
+            raise TypeError(f"wrong data type! for given column `{column}` type {self.__schema[column]['type']} required")
+
+        if not self.__table.primary:
+            self.__table.update_where({column: value}, limit_rows=1, **self.__content)
+        else:
+            self.__table.update_where({column: value}, **{self.__table.primary: self.__content[self.__table.primary]})
+
+        self.__content[column] = value
+
+    def __delitem__(self, column):
+        if isinstance(column, int):
+            column = list(self.__columns)[column]
+        elif not isinstance(column, str):
+            raise TypeError("only int for position or str for column name allowed")
+
+        value = self.__schema[column]['default']
+        self.__setitem__(column, value)
+
+    def __len__(self):
+        return len(self.__content.values())
+
+    def __repr__(self):
+        return repr(str(self.__content))
+
+    def __iter__(self):
+        return iter(self.__content.values())
+
+    def __str__(self):
+        return str(tuple(self.__content.values()))
 
 
 class Table:
@@ -259,7 +345,7 @@ class Table:
         # ToDo return as object possible to be called either by position (like list) or by column_name
         #  make each item in row settable
 
-        return row
+        return Row(self, row)
 
     def get_where(self, *args, **kwargs):
         """
@@ -282,7 +368,8 @@ class Table:
             return self.__getitem__(value)
 
         query = f"SELECT {self.__columns_string()} FROM {self.name}" + self._build_where_query(*args, **kwargs)
-        return self._execute_query(query)
+        rows = [Row(self, row) for row in self._execute_query(query)]
+        return rows
 
     def _create_columns_string(self, columns):
         return f"({str([column_name for column_name in columns])[1:-1]})".replace("'", "")
@@ -354,13 +441,14 @@ class Table:
                 row[key] = self.schema[key]["default"]
         self.update_where(row, primary_key=primary_key, *args, **kwargs)
 
-    def update_where(self, row: (list, dict), primary_key=None, *args, **kwargs):
+    def update_where(self, row: (list, dict), primary_key=None, limit_rows=False, *args, **kwargs):
         if primary_key:
             kwargs[self.primary] = primary_key
             columns, row = self._row_handling(row, primary_key)
         else:
             columns, row = self._row_handling(row)
 
+        # ToDo check if deleting primary really necessary or if possible to reassign row to new primary
         if self.primary in columns:
             primary_pos = columns.index(self.primary)
             del columns[primary_pos]
@@ -377,6 +465,8 @@ class Table:
         query = f"UPDATE {self.name} SET {set_statement}"
         if where_statement:
             query += where_statement
+        if limit_rows:
+            query += f" LIMIT {limit_rows}"
 
         logging.info(query)
         self._execute_query(query)
