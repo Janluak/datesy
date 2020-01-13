@@ -336,7 +336,7 @@ class Table:
                 row[self.primary] = primary_key
             self.set_where(row, primary_key=primary_key)
         else:
-            self.append(row, primary_key)
+            self.insert(row, primary_key)
 
     def set_where(self, row, primary_key=None, *args, **kwargs):
         where_columns = set(kwargs.keys())
