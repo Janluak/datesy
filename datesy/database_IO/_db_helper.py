@@ -340,11 +340,10 @@ class Table:
             raise AttributeError("table has no primary_key column. operation not permitted")
 
         query = f"SELECT {self.__columns_string()} FROM {self.name}" + self._build_where_query(f"{self.primary}={key}")
-        [row] = self._execute_query(query)
-
-        # ToDo return as object possible to be called either by position (like list) or by column_name
-        #  make each item in row settable
-
+        data = self._execute_query(query)
+        if len(data) != 1:
+            raise KeyError(f"{key} not in table {self.name}")
+        [row] = data
         return Row(self, row)
 
     def get_where(self, *args, **kwargs):
@@ -416,13 +415,14 @@ class Table:
         if isinstance(row, list) and len(row) + 1 != len(self.schema):
             raise ValueError("row must be same length as table (without primary key) with '' for emtpy values")
 
-        if self.__getitem__(primary_key):
+        try:
+            self.__getitem__(primary_key)
             if isinstance(row, list):
                 row.insert(0, primary_key)
             elif isinstance(row, dict):
                 row[self.primary] = primary_key
             self.set_where(row, primary_key=primary_key)
-        else:
+        except KeyError:
             self.insert(row, primary_key)
 
     def set_where(self, row, primary_key=None, *args, **kwargs):
@@ -488,6 +488,7 @@ class Table:
         if not self.primary:
             raise AttributeError("table has no primary_key column. operation not permitted")
 
+        self.__getitem__(key)
         self.delete_where(**{self.primary: key})
 
     def delete_where(self, *args, **kwargs):
