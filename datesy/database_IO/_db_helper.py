@@ -16,7 +16,7 @@ class Table:
 
     """
     def __init__(self, table_name, database):
-        self._table = table_name
+        self.__table_name = table_name
         self._db = database
 
         self.__schema = OrderedDict()
@@ -24,6 +24,10 @@ class Table:
         self.__column_for_request = str()
 
         self.working_columns = set()  # desired columns for interaction
+
+    @property
+    def name(self):
+        return self.__table_name
 
     def _build_where_query(self, *args, **kwargs):
         """
@@ -210,12 +214,12 @@ class Table:
         return self.primary
 
     def _get_column_values(self, column):
-        query = f"SELECT {column} from {self._table}"
+        query = f"SELECT {column} from {self.name}"
         values = self._execute_query(query)
         return [i[0] for i in values]
 
     def __len__(self):
-        query = f"SELECT COUNT(*) FROM {self._table}"
+        query = f"SELECT COUNT(*) FROM {self.name}"
         return int(self._execute_query(query)[0][0])
 
     def __iter__(self):
@@ -225,7 +229,7 @@ class Table:
         else:
             range_list = range(len(self))
             return iter(self._execute_query(
-                f"SELECT * FROM `{self._table}` LIMIT 1 OFFSET {offset}")[0]
+                f"SELECT * FROM `{self.name}` LIMIT 1 OFFSET {offset}")[0]
                         for offset in range_list)
 
     def __getitem__(self, key):
@@ -249,7 +253,7 @@ class Table:
         if not self.primary:
             raise AttributeError("table has no primary_key column. operation not permitted")
 
-        query = f"SELECT {self.__columns_string()} FROM {self._table}" + self._build_where_query(f"{self.primary}={key}")
+        query = f"SELECT {self.__columns_string()} FROM {self.name}" + self._build_where_query(f"{self.primary}={key}")
         [row] = self._execute_query(query)
 
         # ToDo return as object possible to be called either by position (like list) or by column_name
@@ -277,7 +281,7 @@ class Table:
             [value] = kwargs.values()
             return self.__getitem__(value)
 
-        query = f"SELECT {self.__columns_string()} FROM {self._table}" + self._build_where_query(*args, **kwargs)
+        query = f"SELECT {self.__columns_string()} FROM {self.name}" + self._build_where_query(*args, **kwargs)
         return self._execute_query(query)
 
     def _create_columns_string(self, columns):
@@ -370,7 +374,7 @@ class Table:
 
         where_statement = self._build_where_query(*args, **kwargs)
 
-        query = f"UPDATE {self._table} SET {set_statement}"
+        query = f"UPDATE {self.name} SET {set_statement}"
         if where_statement:
             query += where_statement
 
@@ -386,7 +390,7 @@ class Table:
                 raise ValueError("row must be same length as table with '' for emtpy values")
         columns, row = self._row_handling(row, primary_key)
 
-        query = f"INSERT INTO {self._table} {self._create_columns_string(columns)} VALUES {self._create_row_string(row)}"
+        query = f"INSERT INTO {self.name} {self._create_columns_string(columns)} VALUES {self._create_row_string(row)}"
         logging.info(query)
         self._execute_query(query)
 
@@ -400,7 +404,7 @@ class Table:
         if not args and not kwargs:
             raise OverflowError("Please use truncate to delete the hole table")
 
-        query = f"DELETE FROM {self._table} " + self._build_where_query(*args, **kwargs)
+        query = f"DELETE FROM {self.name} " + self._build_where_query(*args, **kwargs)
         logging.info(query)
         self._execute_query(query)
 
