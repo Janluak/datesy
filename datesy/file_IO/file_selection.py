@@ -130,7 +130,7 @@ def get_file_list_from_directory(directory, file_ending=None, pattern=None, rege
         raise TypeError("regex needs to be string, {} provided".format(type(regex)))
 
     if not os.path.isdir(directory):
-        raise ValueError("`directory` is not a file_directory")
+        raise ValueError(f"{directory} is not a file_directory")
 
     if not directory.endswith("/"):
         directory += "/"
