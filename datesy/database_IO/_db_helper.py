@@ -167,6 +167,7 @@ class Table:
 
                 # craft column name and value separated by operators
                 column, value = [e for e in re.split(r"[><=! ]", arg) if e]
+                # ToDo escape characters'#%
 
                 if column not in self.schema.keys():
                     raise ValueError(f"column {column} not in table")
@@ -221,16 +222,6 @@ class Table:
         columns_string = f"""{str([i for i in desired_columns]).replace("', '", ", ")[2:-2]}"""
 
         return columns_string
-
-    def __get_column_for_request(self):
-        return next(self.__column_for_request)
-
-    def __set_column_for_request(self, column):
-        if not isinstance(column, str):
-            raise ValueError("column not type str")
-        self.__column_for_request = iter([column])
-
-    _column_for_request = property(__get_column_for_request, __set_column_for_request)
 
     @property
     def schema(self):
@@ -361,10 +352,6 @@ class Table:
             tuple items representing every matched row in database
 
         """
-        if len(kwargs) == 1 and not args:
-            [self._column_for_request] = kwargs.keys()
-            [value] = kwargs.values()
-            return self.__getitem__(value)
 
         query = f"SELECT {self.__columns_string()} FROM {self.name}" + self._build_where_query(*args, **kwargs)
         rows = [Row(self, row) for row in self._execute_query(query)]
@@ -499,6 +486,21 @@ class Table:
         logging.info(query)
         self._execute_query(query)
 
+    def as_dict(self):
+        if not self.primary:
+            raise AttributeError("table has no primary_key column. operation not permitted")
+
+        # ToDo download all data and return as dict
+        raise NotImplemented("coming soon")
+
+    def as_rows(self):
+        # ToDo download all data and return as rows
+        raise NotImplemented("coming soon")
+
+    def as_df(self):
+        # ToDo download all data and return as pandas.dataframe
+        raise NotImplemented("coming soon")
+
     def _execute_raw_query(self, query):
         self._execute_query(query)
 
@@ -536,8 +538,8 @@ class Database:
         specific information to database, see details to each database
 
     """
-    import warnings
-    warnings.warn("\n\nDatabase interface still in development. Changes may apply\n", UserWarning)
+    # import warnings
+    # warnings.warn("\n\nDatabase interface still in development. Changes may apply\n", UserWarning)
 
     def __init__(self, host, port, user, password, database, auto_creation=False):
         import warnings
@@ -624,6 +626,7 @@ class Database:
         Close connection to database
 
         """
+        # ToDo catch exception for unread cursor
         self._cursor.close()
         self._conn.close()
         atexit.unregister(self.close)
