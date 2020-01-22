@@ -137,7 +137,7 @@ class Table:
 
         # casting all equal statements
         for kw in kwargs:
-            where_statements.append(f"`{kw}` = {kwargs[kw]}")
+            where_statements.append(f"""`{kw}` = {'"' + kwargs[kw] + '"' if isinstance(kwargs[kw], str) else kwargs[kw]}""")
 
         # casting all other statements
         for arg in args:
