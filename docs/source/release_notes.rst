@@ -1,6 +1,11 @@
 Release Notes
 =============
 
+0.7.1
+*****
+
+saving jsons: beautified to human readability & sorting keys available
+
 0.7.0
 *****
 
