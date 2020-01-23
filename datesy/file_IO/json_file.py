@@ -105,7 +105,7 @@ def load_all(directory):
     return data
 
 
-def write(file_name, data):
+def write(file_name, data, beautify=True, sort=False):
     """
     Save json from dict to file
 
@@ -115,6 +115,10 @@ def write(file_name, data):
         the file_name to save under. if no ending is provided, saved as .json
     data : dict
         the dictionary to be saved as json
+    beautify : bool, optional
+        if the data is represented in single row or human readable presented (default: human readable)
+    sort : bool, optional
+        if the keys shall be ordered (default: false)
 
     """
     if "." not in file_name:
@@ -130,4 +134,14 @@ def write(file_name, data):
     from json import dump
 
     with open(file_name, "w") as fp:
-        dump(data, fp)
+        if beautify:
+            if sort:
+                dump(data, fp, indent=4, sort_keys=True)
+            else:
+                dump(data, fp, indent=4)
+        else:
+            if sort:
+                dump(data, fp, sort_keys=True)
+            else:
+                dump(data, fp)
+
