@@ -5,90 +5,121 @@ import atexit
 __all__ = ["Database", "Table"]
 
 
-class Row:
+class Database:
     """
-    Representation of a database row entry
+    Representing a database as an object
+
+    On initialization the connection to the database is established.
+    For clean working please call ``close()`` at end of db usage.
 
     Parameters
     ----------
-    table: Table
-        table belonging to
-    data: list, tuple, dict
-        data to represent
+    host : str
+        `url` or `ip` of host
+    port : int
+        port_no
+    user : str
+        user_name
+    password : str
+        password for this user
+    database : str
+        the database to connect to
+    auto_creation : bool, optional
+        if all tables shall be initiated as variables of object
+    kwargs
+        specific information to database, see details to each database
+
     """
 
-    def __init__(self, table, data):
-        self.__table = table
-        self.__schema = table.schema
-        self.__columns = table.schema.keys()
+    def __init__(self, host, port, user, password, database, auto_creation=False):
+        import warnings
+        warnings.warn("\n\nDatabase interface still in development. Changes may apply\n", UserWarning)
+        self._host = host
+        self._port = port
+        self._user = user
+        self._password = password
+        self._database = database
+        self.__tables = list()
 
-        if isinstance(data, (list, tuple)):
-            self.__content = OrderedDict()
-            pos = 0
-            for key in table.schema:
-                self.__content[key] = data[pos]
-                pos += 1
+        self._connect_to_db()  # function must be defined for every database representing subclass
+        if auto_creation:
+            self._constructor()
+        atexit.register(self.close)
 
-        elif isinstance(data, (dict, OrderedDict)):
-            if not all(key in table.schema for key in data):
-                raise ValueError("columns of row not in table schema")
-            self.__content = data
+    @property
+    def tables(self):
+        """
+        Get the available tables of database
 
-        else:
-            raise TypeError(f"data must be either list or dict, not {type(data)}")
+        Returns
+        -------
+        list
+            representing all tables of database
 
-    def schema_validation(self, key, value):
-        # ToDo do local schema validation for saving time in connection to server?
-        return True
+        """
+        if not self.__tables:
+            self._cursor.execute(self._table_update_query)
+            for table_data in self._cursor:
+                self.__tables.append(table_data[0])
+        return self.__tables
 
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            return self.__content[list(self.__columns)[key]]
+    def update_table_data(self):
+        """
+        Update the data concerning the list of available tables
 
-        elif isinstance(key, str):
-            return self.__content[key]
+        Returns
+        -------
+        list
+            available tables at database
 
-        else:
-            raise TypeError("only int for position or str for column name allowed")
+        """
+        self.__tables = list()
+        return self.tables
 
-    def __setitem__(self, column, value):
-        if isinstance(column, int):
-            column = list(self.__columns)[column]
-        elif not isinstance(column, str):
-            raise TypeError("only int for position or str for column name allowed")
+    def table(self, table_name):
+        """
+        Return a database_table as an object
 
-        if not column != self.__table.primary:
-            raise NotImplemented("currently not possible to change primary key with builtins. please copy row and insert as new one")
-        if not self.schema_validation(column, value):
-            raise TypeError(f"wrong data type! for given column `{column}` type {self.__schema[column]['type']} required")
+        Parameters
+        ----------
+        table_name : str
+            the desired table
 
-        if not self.__table.primary:
-            self.__table.update_where({column: value}, limit_rows=1, **self.__content)
-        else:
-            self.__table.update_where({column: value}, **{self.__table.primary: self.__content[self.__table.primary]})
+        Returns
+        -------
+        Table
+            class Table as representation of table
 
-        self.__content[column] = value
+        """
+        return Table(table_name, self)
 
-    def __delitem__(self, column):
-        if isinstance(column, int):
-            column = list(self.__columns)[column]
-        elif not isinstance(column, str):
-            raise TypeError("only int for position or str for column name allowed")
+    def _check_auto_creation(self):
+        doubles = set(self.__dir__()).intersection(set(self.tables))
+        if doubles:
+            raise EnvironmentError(f"builtin function of class matches table_name in database {self._database}\n"
+                                   f"can't create all tables as attributes to database_object\n"
+                                   f"please disable auto_creation or rename matching table '{doubles}' in database")
+        hidden_values = {table_name for table_name in self.tables if "__" == table_name[0:2] }
+        if any("__" == table_name[0:2] for table_name in self.tables):
+            logging.warning(
+                f"table_name in database {self._database} contains '__' in beginning -> not accessable with `Python` "
+                f"please disable auto_creation or rename '{hidden_values}' in database"
+            )
 
-        value = self.__schema[column]['default']
-        self.__setitem__(column, value)
+    def _constructor(self):
+        self._check_auto_creation()
+        for table_name in self.tables:
+            setattr(self, table_name, Table(table_name, self))
 
-    def __len__(self):
-        return len(self.__content.values())
+    def close(self):
+        """
+        Close connection to database
 
-    def __repr__(self):
-        return repr(str(self.__content))
-
-    def __iter__(self):
-        return iter(self.__content.values())
-
-    def __str__(self):
-        return str(tuple(self.__content.values()))
+        """
+        # ToDo catch exception for unread cursor
+        self._cursor.close()
+        self._conn.close()
+        atexit.unregister(self.close)
 
 
 class Table:
@@ -513,120 +544,88 @@ class Table:
     # ToDo implement is (not) NULL
 
 
-class Database:
+class Row:
     """
-    Representing a database as an object
-
-    On initialization the connection to the database is established.
-    For clean working please call ``close()`` at end of db usage.
+    Representation of a database row entry
 
     Parameters
     ----------
-    host : str
-        `url` or `ip` of host
-    port : int
-        port_no
-    user : str
-        user_name
-    password : str
-        password for this user
-    database : str
-        the database to connect to
-    auto_creation : bool, optional
-        if all tables shall be initiated as variables of object
-    kwargs
-        specific information to database, see details to each database
-
+    table: Table
+        table belonging to
+    data: list, tuple, dict
+        data to represent
     """
-    # import warnings
-    # warnings.warn("\n\nDatabase interface still in development. Changes may apply\n", UserWarning)
 
-    def __init__(self, host, port, user, password, database, auto_creation=False):
-        import warnings
-        warnings.warn("\n\nDatabase interface still in development. Changes may apply\n", UserWarning)
-        self._host = host
-        self._port = port
-        self._user = user
-        self._password = password
-        self._database = database
-        self.__tables = list()
+    def __init__(self, table, data):
+        self.__table = table
+        self.__schema = table.schema
+        self.__columns = table.schema.keys()
 
-        self._connect_to_db()  # function must be defined for every database representing subclass
-        if auto_creation:
-            self._constructor()
-        atexit.register(self.close)
+        if isinstance(data, (list, tuple)):
+            self.__content = OrderedDict()
+            pos = 0
+            for key in table.schema:
+                self.__content[key] = data[pos]
+                pos += 1
 
-    @property
-    def tables(self):
-        """
-        Get the available tables of database
+        elif isinstance(data, (dict, OrderedDict)):
+            if not all(key in table.schema for key in data):
+                raise ValueError("columns of row not in table schema")
+            self.__content = data
 
-        Returns
-        -------
-        list
-            representing all tables of database
+        else:
+            raise TypeError(f"data must be either list or dict, not {type(data)}")
 
-        """
-        if not self.__tables:
-            self._cursor.execute(self._table_update_query)
-            for table_data in self._cursor:
-                self.__tables.append(table_data[0])
-        return self.__tables
+    def schema_validation(self, key, value):
+        # ToDo do local schema validation for saving time in connection to server?
+        return True
 
-    def update_table_data(self):
-        """
-        Update the data concerning the list of available tables
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self.__content[list(self.__columns)[key]]
 
-        Returns
-        -------
-        list
-            available tables at database
+        elif isinstance(key, str):
+            return self.__content[key]
 
-        """
-        self.__tables = list()
-        return self.tables
+        else:
+            raise TypeError("only int for position or str for column name allowed")
 
-    def table(self, table_name):
-        """
-        Return a database_table as an object
+    def __setitem__(self, column, value):
+        if isinstance(column, int):
+            column = list(self.__columns)[column]
+        elif not isinstance(column, str):
+            raise TypeError("only int for position or str for column name allowed")
 
-        Parameters
-        ----------
-        table_name : str
-            the desired table
+        if not column != self.__table.primary:
+            raise NotImplemented("currently not possible to change primary key with builtins. please copy row and insert as new one")
+        if not self.schema_validation(column, value):
+            raise TypeError(f"wrong data type! for given column `{column}` type {self.__schema[column]['type']} required")
 
-        Returns
-        -------
-        Table
-            class Table as representation of table
+        if not self.__table.primary:
+            self.__table.update_where({column: value}, limit_rows=1, **self.__content)
+        else:
+            self.__table.update_where({column: value}, **{self.__table.primary: self.__content[self.__table.primary]})
 
-        """
-        return Table(table_name, self)
+        self.__content[column] = value
 
-    def _check_auto_creation(self):
-        doubles = set(self.__dir__()).intersection(set(self.tables))
-        if doubles:
-            raise EnvironmentError(f"builtin function of class matches table_name in database {self._database}\n"
-                                   f"can't create all tables as attributes to database_object\n"
-                                   f"please disable auto_creation or rename matching table '{doubles}' in database")
-        hidden_values = {table_name for table_name in self.tables if "__" == table_name[0:2] }
-        if any("__" == table_name[0:2] for table_name in self.tables):
-            logging.warning(
-                f"table_name in database {self._database} contains '__' in beginning -> not accessable with `Python` "
-                f"please disable auto_creation or rename '{hidden_values}' in database"
-            )
+    def __delitem__(self, column):
+        if isinstance(column, int):
+            column = list(self.__columns)[column]
+        elif not isinstance(column, str):
+            raise TypeError("only int for position or str for column name allowed")
 
-    def _constructor(self):
-        self._check_auto_creation()
-        for table_name in self.tables:
-            setattr(self, table_name, Table(table_name, self))
+        value = self.__schema[column]['default']
+        self.__setitem__(column, value)
 
-    def close(self):
-        """
-        Close connection to database
+    def __len__(self):
+        return len(self.__content.values())
 
-        """
-        # ToDo catch exception for unread cursor
-        self._cursor.close()
-        self._conn.close()
-        atexit.unregister(self.close)
+    def __repr__(self):
+        return repr(str(self.__content))
+
+    def __iter__(self):
+        return iter(self.__content.values())
+
+    def __str__(self):
+        return str(tuple(self.__content.values()))
+
