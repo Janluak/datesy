@@ -39,7 +39,7 @@ class MySQL(Database):
         self._conn = mysql.connector.connect(host=self._host, user=self._user, passwd=self._password, db=self._database)
         self._cursor = self._conn.cursor()
 
-    def _constructor(self):
+    def _construct_all_tables(self):
         self._check_auto_creation()
         for table_name in self.tables:
             setattr(self, table_name, _MySQLTable(table_name, self))

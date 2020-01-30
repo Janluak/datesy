@@ -43,7 +43,7 @@ class Database:
 
         self._connect_to_db()  # function must be defined for every database representing subclass
         if auto_creation:
-            self._constructor()
+            self._construct_all_tables()
         atexit.register(self.close)
 
     @property
@@ -106,7 +106,7 @@ class Database:
                 f"please disable auto_creation or rename '{hidden_values}' in database"
             )
 
-    def _constructor(self):
+    def _construct_all_tables(self):
         self._check_auto_creation()
         for table_name in self.tables:
             setattr(self, table_name, Table(table_name, self))
