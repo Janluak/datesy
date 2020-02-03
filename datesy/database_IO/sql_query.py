@@ -25,6 +25,10 @@ class SQLQueryConstructor:
         self._offset_affected_rows = int()
         self._order_by = {primary: "ASC"} if primary else dict()          # columns to order by
 
+    @property
+    def columns(self):
+        return self._affected_columns
+
     # ### Basic request type ###
     def delete_request(self):
         """
@@ -48,6 +52,10 @@ class SQLQueryConstructor:
         return self
 
     # ### give data for query ###
+    def add_desired_columns(self, *args):
+        for column in args:
+            self._affected_columns.append(column)
+
     def add_where_statements(self, column, command, value):    # ToDo catch OR
         # ToDo other statements like is Null, contains etc.
         self._wheres.append(f"(`{column}` {command} {value})")
