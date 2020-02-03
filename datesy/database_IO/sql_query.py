@@ -216,6 +216,15 @@ class SQLQueryConstructor:
         if self._wheres:
             query += " WHERE " + " AND ".join(self._wheres)
 
+        if self._order_by:
+            if self._affected_columns:
+                for column in self._order_by.copy():
+                    if column not in self._affected_columns:
+                        del self._order_by[column]
+            if self._order_by:
+                orders = [f"{i} {self._order_by[i]}" for i in self._order_by]
+                query += f" ORDER BY {', '.join(orders)}"
+
         if self._affected_rows:
             query += f" LIMIT {self._affected_rows}"
         if self._offset_affected_rows:
