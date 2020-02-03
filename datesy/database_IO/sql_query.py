@@ -8,7 +8,7 @@ class SQLQueryConstructor:
         self._consistent = False       # for flagging inconsistent constructor
         self._database_name = database_name
         self._table_name = table_name
-        self.name = f"`{database_name}.{table_name}`"
+        self.name = f"`{database_name}`.`{table_name}`"
         self._primary = primary
 
         self._affected_columns = list()   # all columns relevant for request
