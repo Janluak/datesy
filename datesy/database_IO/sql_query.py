@@ -230,10 +230,6 @@ class SQLQueryConstructor:
         if self._offset_affected_rows:
             query += f" OFFSET {self._offset_affected_rows}"
 
-        if self._order_by:
-            orders = [f"{i} {self._order_by[i]}" for i in self._order_by]
-            query += f" ORDER BY {', '.join(orders)}"
-
         if not self._consistent:
             self.__init__(self._database_name, self._table_name, self._primary)     # flush all entries
         return query + ";"
