@@ -436,7 +436,7 @@ class Table:
         try:
             self.__getitem__(primary_key)
             if isinstance(row, list):
-                row.insert(0, primary_key)
+                row.insert(list(self.schema.keys()).index(self.primary), primary_key)
             elif isinstance(row, dict):
                 row[self.primary] = primary_key
             self.set_where(row, primary_key=primary_key)
