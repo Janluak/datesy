@@ -1,3 +1,10 @@
+_dual_value_commands = ["between", "not between"]
+_string_commands = ["contains", "not contains", "not like", "like", "in", "not in"]
+_allowed_sql_query_commands = ["not", "<>", "!=", "=", "<", ">", "between", "not between",
+                               "is", "is not", "in", "not in"]
+_command_translations = {"contains": "like", "not contains": "not like", "!=": "<>", "in": "like", "not in": "not like"}
+
+
 class SQLQueryConstructor:
     """
     A SQL query constructor class.
@@ -55,10 +62,39 @@ class SQLQueryConstructor:
     def add_desired_columns(self, *args):
         for column in args:
             self._affected_columns.append(column)
+        return self
 
-    def add_where_statements(self, column, command, value):    # ToDo catch OR
-        # ToDo other statements like is Null, contains etc.
-        self._wheres.append(f"(`{column}` {command} {value})")
+    def add_where_statements(self, column=None, command=None, value=None, *args, **kwargs):    # ToDo catch OR
+        for key in kwargs:
+            self._wheres.append(f"(`{key}` = {kwargs[key]})")
+
+        args = list(args)
+        args.append((column, command, value))
+
+        for statement in args:
+            if not isinstance(statement, (list, tuple)):
+                raise TypeError("must be list or tuple")
+            if len(statement) != 3:
+                raise IndexError("each statement length must be 3: column, command, value")
+
+            # allowed statements
+            if statement[1].lower() not in _allowed_sql_query_commands:
+                raise ValueError(f"unsupported argument {statement[1]}, only allowed: {_allowed_sql_query_commands}")
+
+            # handling special commands
+            if statement[1].lower() in _dual_value_commands:
+                statement[2] = f"{statement[2][0]} AND {statement[2][1]}"
+            if statement[1].lower() in _string_commands:
+                statement[2] = f"'%{statement[2]}%'"
+
+            # translating commands
+            if statement[1] in _command_translations:
+                statement[1] = _command_translations[statement[1]]
+
+            if statement[2] is None:
+                statement[2] = "NULL"
+
+            self._wheres.append(f"(`{column}` {command} {value})")
         return self
 
     def add_join(self, table_1, column_1, table_2, column_2, join_type="INNER", **further_columns):
