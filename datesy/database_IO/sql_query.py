@@ -205,7 +205,7 @@ class SQLQueryConstructor:
                 query = f"INSERT INTO {self.name} ({columns}) VALUES ({values})"
 
         elif self._length:
-            query = f"SELECT{' DISTINCT' if self._distinct else ''} COUNT({columns})"
+            query = f"SELECT{' DISTINCT' if self._distinct else ''} COUNT({columns}) FROM {self.name}"
             self._order_by = dict()
         else:
             query = f"SELECT {columns} FROM {self.name}"
