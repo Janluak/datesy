@@ -1,514 +1,10 @@
 from collections import OrderedDict
 import logging, re, inspect
 import atexit
+from ast import literal_eval
+from .sql_query import SQLQueryConstructor
 
 __all__ = ["Database", "Table"]
-
-
-class Row:
-    """
-    Representation of a database row entry
-
-    Parameters
-    ----------
-    table: Table
-        table belonging to
-    data: list, tuple, dict
-        data to represent
-    """
-
-    def __init__(self, table, data):
-        self.__table = table
-        self.__schema = table.schema
-        self.__columns = table.schema.keys()
-
-        if isinstance(data, (list, tuple)):
-            self.__content = OrderedDict()
-            pos = 0
-            for key in table.schema:
-                self.__content[key] = data[pos]
-                pos += 1
-
-        elif isinstance(data, (dict, OrderedDict)):
-            if not all(key in table.schema for key in data):
-                raise ValueError("columns of row not in table schema")
-            self.__content = data
-
-        else:
-            raise TypeError(f"data must be either list or dict, not {type(data)}")
-
-    def schema_validation(self, key, value):
-        # ToDo do local schema validation for saving time in connection to server?
-        return True
-
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            return self.__content[list(self.__columns)[key]]
-
-        elif isinstance(key, str):
-            return self.__content[key]
-
-        else:
-            raise TypeError("only int for position or str for column name allowed")
-
-    def __setitem__(self, column, value):
-        if isinstance(column, int):
-            column = list(self.__columns)[column]
-        elif not isinstance(column, str):
-            raise TypeError("only int for position or str for column name allowed")
-
-        if not column != self.__table.primary:
-            raise NotImplemented("currently not possible to change primary key with builtins. please copy row and insert as new one")
-        if not self.schema_validation(column, value):
-            raise TypeError(f"wrong data type! for given column `{column}` type {self.__schema[column]['type']} required")
-
-        if not self.__table.primary:
-            self.__table.update_where({column: value}, limit_rows=1, **self.__content)
-        else:
-            self.__table.update_where({column: value}, **{self.__table.primary: self.__content[self.__table.primary]})
-
-        self.__content[column] = value
-
-    def __delitem__(self, column):
-        if isinstance(column, int):
-            column = list(self.__columns)[column]
-        elif not isinstance(column, str):
-            raise TypeError("only int for position or str for column name allowed")
-
-        value = self.__schema[column]['default']
-        self.__setitem__(column, value)
-
-    def __len__(self):
-        return len(self.__content.values())
-
-    def __repr__(self):
-        return repr(str(self.__content))
-
-    def __iter__(self):
-        return iter(self.__content.values())
-
-    def __str__(self):
-        return str(tuple(self.__content.values()))
-
-
-class Table:
-    """
-    Create a representation of a database table
-
-    Parameters
-    ----------
-    table_name : str
-    database : Database
-
-    """
-    def __init__(self, table_name, database):
-        self.__table_name = table_name
-        self._db = database
-
-        self.__schema = OrderedDict()
-        self.__primary = str()  # primary key
-        self.__column_for_request = str()
-
-        self.working_columns = set()  # desired columns for interaction
-
-    @property
-    def name(self):
-        return self.__table_name
-
-    def _build_where_query(self, *args, **kwargs):
-        """
-        Compose the query for the desired task
-
-        Parameters
-        ----------
-        args : str
-            strings with the statements. E.g. ``"column > 351"``
-        kwargs
-            if a column shall have exactly a value
-
-        Returns
-        -------
-        str
-            query able to execute
-
-        """
-        # collecting all where statements
-        where_statements = list()
-
-        # casting all equal statements
-        for kw in kwargs:
-            where_statements.append(f"`{kw}` = {kwargs[kw]}")
-
-        # casting all other statements
-        for arg in args:
-            elements = arg.split(" ")
-
-            # word based statement (like `"123" in column_name`)
-            if len(elements) > 2 and not any(i in arg for i in "<>=!"):
-                column = elements[-1]
-
-                if column not in self.schema.keys():
-                    raise ValueError(f"column {column} not in table")
-
-                value = elements[0]
-                commands = elements[1:-1]
-                if "not" in commands:
-                    boolean = False
-                else:
-                    boolean = True
-
-                where_statements.append(self._query_contains(column, value, boolean))   # db specific -> must be defined in inherited class
-
-            # special character based statement (like `column_name > 123`)
-            else:
-                # either special character or word based statements allowed
-                if " not " in arg or " in " in arg:
-                    raise ValueError("please only use words like `in`, & `not` or the command_characters {<, >, !, =}")
-
-                # craft column name and value separated by operators
-                column, value = [e for e in re.split(r"[><=! ]", arg) if e]
-
-                if column not in self.schema.keys():
-                    raise ValueError(f"column {column} not in table")
-
-                # negation check
-                if "<>" in arg or "!" in arg:
-                    boolean = False
-                else:
-                    boolean = True
-
-                # Null statements
-                if value.lower() == "null" or value == None:
-                    where_statements.append(self._query_null(column, boolean))  # db specific -> must be defined in inherited class
-
-                # other statements
-                else:
-                    arg = arg.replace(column, "").replace(value, "").replace(" ", "")
-                    if "=" in arg and not any(c in arg for c in [">", "<"]):
-                        command = "=" if boolean else self._query_unequals  # db specific -> must be defined in inherited class
-                    elif any(c in arg for c in [">", "<", "="]) and len(arg) < 3:
-                        command = arg
-                    else:
-                        raise ValueError("please use only these command characters: {<, >, !, =}")
-
-                    where_statements.append(f"`{column}` {command} {value}")
-
-        where_statement = " AND ".join(where_statements)
-
-        query = f" WHERE " + where_statement
-        logging.info(f"composed query: {query}")
-        return query
-
-    def _execute_query(self, query):
-        self._db._cursor.execute(query)
-        rows = list()
-        for row in self._db._cursor:
-            rows.append(row)
-        self._db._conn.commit()
-        return rows
-
-    def __columns_string(self, desired_columns=False):
-        # if no columns specified
-        if not self.working_columns and not desired_columns:
-            return "*"
-
-        if not set(self.working_columns).issubset(set(self.schema.keys())):
-            raise ValueError("not all specified columns are in table")
-
-        if self.working_columns:
-            desired_columns = self.working_columns
-
-        columns_string = f"""{str([i for i in desired_columns]).replace("', '", ", ")[2:-2]}"""
-
-        return columns_string
-
-    def __get_column_for_request(self):
-        return next(self.__column_for_request)
-
-    def __set_column_for_request(self, column):
-        if not isinstance(column, str):
-            raise ValueError("column not type str")
-        self.__column_for_request = iter([column])
-
-    _column_for_request = property(__get_column_for_request, __set_column_for_request)
-
-    @property
-    def schema(self):
-        """
-        Get schema of table
-
-        Returns
-        -------
-        OrderedDict
-            dictionary containing the column as key and schema_info as dictionary for every column
-
-        """
-        if not self.__schema:
-            self._db._cursor.execute(self._schema_update_query)
-            for row in self._db._cursor:
-                # ToDo check for more available data via SQL/maybe putting to db specific subclass
-                self.__schema[row[0]] = {"type": row[1], "null": row[2], "key": row[3], "default": row[4],
-                                         "extra": row[5]}
-        return self.__schema
-
-    @property
-    def primary(self):
-        """
-        Get the primary key of this table
-
-        Returns
-        -------
-        str, None
-            the primary column as string if one exists
-
-        """
-        if isinstance(self.__primary, str) and not self.__primary:
-            for column in self.schema:
-                if self.schema[column]["key"] == "PRI":
-                    self.__primary = column
-                    break
-            if not self.__primary:
-                self.__primary = None  # table has no primary key
-
-        return self.__primary
-
-    def update_schema_data(self):
-        """
-        Update the schema of the table
-
-        Returns
-        -------
-        OrderedDict
-            dictionary containing the column as key and schema_info as dictionary for every column
-
-        """
-        self.__schema = OrderedDict()
-        self.__primary = str()
-        return self.schema
-
-    def update_primary_data(self):
-        """
-        Update the primary key of the table
-
-        Returns
-        -------
-        str, None
-            the primary column as string if one exists
-        """
-        self.__schema = OrderedDict()
-        self.__primary = str()
-        return self.primary
-
-    def _get_column_values(self, column):
-        query = f"SELECT {column} from {self.name}"
-        values = self._execute_query(query)
-        return [i[0] for i in values]
-
-    def __len__(self):
-        query = f"SELECT COUNT(*) FROM {self.name}"
-        return int(self._execute_query(query)[0][0])
-
-    def __iter__(self):
-        if self.primary:
-            self._keys = iter(self._get_column_values(self.primary))
-            return self._keys
-        else:
-            range_list = range(len(self))
-            return iter(self._execute_query(
-                f"SELECT * FROM `{self.name}` LIMIT 1 OFFSET {offset}")[0]
-                        for offset in range_list)
-
-    def __getitem__(self, key):
-        """
-        Get rows where key matches the primary column
-
-        works like ``database.table[key]``
-
-        Parameters
-        ----------
-        key : any
-            matching value in primary column
-
-        Returns
-        -------
-        list
-            tuple items representing every matched row in database
-
-        """
-
-        if not self.primary:
-            raise AttributeError("table has no primary_key column. operation not permitted")
-
-        query = f"SELECT {self.__columns_string()} FROM {self.name}" + self._build_where_query(f"{self.primary}={key}")
-        data = self._execute_query(query)
-        if len(data) != 1:
-            raise KeyError(f"{key} not in table {self.name}")
-        [row] = data
-        return Row(self, row)
-
-    def get_where(self, *args, **kwargs):
-        """
-        Get rows where value matches the defined column: ``columns=key``
-
-        Parameters
-        ----------
-        **kwargs
-            column = key values
-
-        Returns
-        -------
-        list
-            tuple items representing every matched row in database
-
-        """
-        if len(kwargs) == 1 and not args:
-            [self._column_for_request] = kwargs.keys()
-            [value] = kwargs.values()
-            return self.__getitem__(value)
-
-        query = f"SELECT {self.__columns_string()} FROM {self.name}" + self._build_where_query(*args, **kwargs)
-        rows = [Row(self, row) for row in self._execute_query(query)]
-        return rows
-
-    def _create_columns_string(self, columns):
-        return f"({str([column_name for column_name in columns])[1:-1]})".replace("'", "")
-
-    def _create_row_string(self, row):
-        return f"({str(row)[1:-1]})"
-
-    def _row_handling(self, row: (list, dict), primary_key=None):
-        if isinstance(row, dict):
-            if primary_key:
-                row[self.primary] = primary_key
-            columns = list(row.keys())
-            row = [row[column] for column in columns]
-
-        elif isinstance(row, list):
-            columns = list()
-            for pos in range(len(row)):
-                if row[pos] != "":
-                    columns.append(list(self.schema.keys())[pos])
-            row = [element for element in row if element != ""]
-
-        else:
-            raise TypeError("row must be either list or dict")
-
-        return columns, row
-
-    def __setitem__(self, primary_key, row):
-        """
-
-        Parameters
-        ----------
-        primary_key : str, None
-            the key of the primary column. If None -> new row inserted
-        row : list, dict
-            the row data in either correct order or in a dict with column_name
-
-        Returns
-        -------
-
-        """
-        if not self.primary:
-            raise AttributeError("table has no primary_key column. operation not permitted")
-
-        if isinstance(row, list) and len(row) + 1 != len(self.schema):
-            raise ValueError("row must be same length as table (without primary key) with '' for emtpy values")
-
-        try:
-            self.__getitem__(primary_key)
-            if isinstance(row, list):
-                row.insert(0, primary_key)
-            elif isinstance(row, dict):
-                row[self.primary] = primary_key
-            self.set_where(row, primary_key=primary_key)
-        except KeyError:
-            self.insert(row, primary_key)
-
-    def set_where(self, row, primary_key=None, *args, **kwargs):
-        where_columns = set(kwargs.keys())
-        if primary_key:
-            where_columns.add(self.primary)
-            kwargs[self.primary] = primary_key
-
-        if isinstance(row, list):
-            for pos in range(len(row)):
-                if row[pos] == "":
-                    if list(self.schema.keys())[pos] not in where_columns:
-                        row[pos] = self.schema[list(self.schema.keys())[pos]]["default"]
-        elif isinstance(row, dict):
-            for key in set(set(self.schema.keys())).difference(row.keys()).difference(where_columns):
-                row[key] = self.schema[key]["default"]
-        self.update_where(row, primary_key=primary_key, *args, **kwargs)
-
-    def update_where(self, row: (list, dict), primary_key=None, limit_rows=False, *args, **kwargs):
-        if primary_key:
-            kwargs[self.primary] = primary_key
-            columns, row = self._row_handling(row, primary_key)
-        else:
-            columns, row = self._row_handling(row)
-
-        # ToDo check if deleting primary really necessary or if possible to reassign row to new primary
-        if self.primary in columns:
-            primary_pos = columns.index(self.primary)
-            del columns[primary_pos]
-            del row[primary_pos]
-
-        set_statements = list()
-        for i in range(len(columns)):
-            set_statements.append(f"""{str(columns[i])} = {"'" +  str(row[i]) + "'" 
-                if not isinstance(row[i], type(None)) else 'NULL'}""")
-        set_statement = ", ".join(set_statements)
-
-        where_statement = self._build_where_query(*args, **kwargs)
-
-        query = f"UPDATE {self.name} SET {set_statement}"
-        if where_statement:
-            query += where_statement
-        if limit_rows:
-            query += f" LIMIT {limit_rows}"
-
-        logging.info(query)
-        self._execute_query(query)
-
-    def insert(self, row: (list, dict), primary_key=None):
-
-        if isinstance(row, list):
-            if primary_key:
-                row.insert(0, primary_key)
-            if len(row) != len(self.schema):
-                raise ValueError("row must be same length as table with '' for emtpy values")
-        columns, row = self._row_handling(row, primary_key)
-
-        query = f"INSERT INTO {self.name} {self._create_columns_string(columns)} VALUES {self._create_row_string(row)}"
-        logging.info(query)
-        self._execute_query(query)
-
-    def __delitem__(self, key):
-        if not self.primary:
-            raise AttributeError("table has no primary_key column. operation not permitted")
-
-        self.__getitem__(key)
-        self.delete_where(**{self.primary: key})
-
-    def delete_where(self, *args, **kwargs):
-        if not args and not kwargs:
-            raise OverflowError("Please use truncate to delete the hole table")
-
-        query = f"DELETE FROM {self.name} " + self._build_where_query(*args, **kwargs)
-        logging.info(query)
-        self._execute_query(query)
-
-    def _execute_raw_query(self, query):
-        self._execute_query(query)
-
-    # ToDo implement TRUNCATE
-
-    # ToDo implement ORDER BY as addition to query as constant added string until changed?
-
-    # ToDo implement min/max
-
-    # ToDo implement is (not) NULL
 
 
 class Database:
@@ -536,23 +32,37 @@ class Database:
         specific information to database, see details to each database
 
     """
-    import warnings
-    warnings.warn("\n\nDatabase interface still in development. Changes may apply\n", UserWarning)
 
     def __init__(self, host, port, user, password, database, auto_creation=False):
         import warnings
-        warnings.warn("\n\nDatabase interface still in development. Changes may apply\n", UserWarning)
+
+        warnings.warn(
+            "\n\nDatabase interface still in development. Changes may apply\n",
+            UserWarning,
+        )
         self._host = host
         self._port = port
         self._user = user
         self._password = password
-        self._database = database
+        self.__name = database
         self.__tables = list()
 
         self._connect_to_db()  # function must be defined for every database representing subclass
         if auto_creation:
-            self._constructor()
+            self._construct_all_tables()
         atexit.register(self.close)
+
+    @property
+    def name(self):
+        """
+        Name of the database
+
+        Returns
+        -------
+        str
+
+        """
+        return self.__name
 
     @property
     def tables(self):
@@ -604,17 +114,21 @@ class Database:
     def _check_auto_creation(self):
         doubles = set(self.__dir__()).intersection(set(self.tables))
         if doubles:
-            raise EnvironmentError(f"builtin function of class matches table_name in database {self._database}\n"
-                                   f"can't create all tables as attributes to database_object\n"
-                                   f"please disable auto_creation or rename matching table '{doubles}' in database")
-        hidden_values = {table_name for table_name in self.tables if "__" == table_name[0:2] }
+            raise EnvironmentError(
+                f"builtin function of class matches table_name in database {self.name}\n"
+                f"can't create all tables as attributes to database_object\n"
+                f"please disable auto_creation or rename matching table '{doubles}' in database"
+            )
+        hidden_values = {
+            table_name for table_name in self.tables if "__" == table_name[0:2]
+        }
         if any("__" == table_name[0:2] for table_name in self.tables):
             logging.warning(
-                f"table_name in database {self._database} contains '__' in beginning -> not accessable with `Python` "
+                f"table_name in database {self.name} contains '__' in beginning -> not accessable with `Python` "
                 f"please disable auto_creation or rename '{hidden_values}' in database"
             )
 
-    def _constructor(self):
+    def _construct_all_tables(self):
         self._check_auto_creation()
         for table_name in self.tables:
             setattr(self, table_name, Table(table_name, self))
@@ -624,6 +138,545 @@ class Database:
         Close connection to database
 
         """
+        # ToDo catch exception for unread cursor
         self._cursor.close()
         self._conn.close()
         atexit.unregister(self.close)
+        logging.info("closed connection to database")
+
+
+class Table:
+    """
+    Create a representation of a database table
+
+    Parameters
+    ----------
+    table_name : str
+    database : Database
+
+    """
+
+    def __init__(self, table_name, database):
+        self.__table_name = table_name
+        self.__db = database
+
+        self.__schema = OrderedDict()
+        self.__primary = str()  # primary key
+        self.__query = SQLQueryConstructor(self.database.name, self.name, self.primary)
+
+    @property
+    def name(self):
+        return self.__table_name
+
+    @property
+    def database(self):
+        return self.__db
+
+    @property
+    def query(self):
+        return self.__query
+
+    def run_query(self):
+        return self.execute_raw_sql(repr(self.query))
+
+    def execute_raw_sql(self, sql_query):
+        """
+        Execute raw sql statements
+
+        Parameters
+        ----------
+        sql_query : str
+            sql query
+
+        Returns
+        -------
+        list
+            data from database
+
+        """
+        logging.info(f"raw sql_query: {sql_query}")
+        self.database._cursor.execute(sql_query)
+        rows = list()
+        for row in self.database._cursor:
+            rows.append(row)
+        self.database._conn.commit()
+        return rows
+
+    @property
+    def schema(self):
+        """
+        Get schema of table
+
+        Returns
+        -------
+        OrderedDict
+            dictionary containing the column as key and schema_info as dictionary for every column
+
+        """
+        if not self.__schema:
+            for row in self.execute_raw_sql(self._schema_update_query):
+                # ToDo check for more available data via SQL/maybe putting to db specific subclass
+                self.__schema[row[0]] = {
+                    "type": row[1],
+                    "null": row[2],
+                    "key": row[3],
+                    "default": row[4],
+                    "extra": row[5],
+                }
+        return self.__schema
+
+    @property
+    def primary(self):
+        """
+        Get the primary key of this table
+
+        Returns
+        -------
+        str, None
+            the primary column as string if one exists
+
+        """
+        if isinstance(self.__primary, str) and not self.__primary:
+            for column in self.schema:
+                if self.schema[column]["key"] == "PRI":
+                    self.__primary = column
+                    break
+            if not self.__primary:
+                self.__primary = None  # table has no primary key
+
+        return self.__primary
+
+    def update_schema_data(self):
+        """
+        Update the schema of the table
+
+        Returns
+        -------
+        OrderedDict
+            dictionary containing the column as key and schema_info as dictionary for every column
+
+        """
+        self.__schema = OrderedDict()
+        self.__primary = str()
+        return self.schema
+
+    def update_primary_data(self):
+        """
+        Update the primary key of the table
+
+        Returns
+        -------
+        str, None
+            the primary column as string if one exists
+        """
+        self.__schema = OrderedDict()
+        self.__primary = str()
+        return self.primary
+
+    def _get_column_values(self, *columns):
+        self.query.add_desired_columns(*columns)
+        if len(self.query.columns) == 1:
+            values = self.run_query()
+            return [i[0] for i in values]
+        else:
+            return self.run_query()
+
+    def __len__(self):
+        self.query.length_request()
+        return int(self.run_query()[0][0])
+
+    def __iter__(self):
+        if self.primary:
+            self._keys = iter(self._get_column_values(self.primary))
+            return self._keys
+        else:
+            range_list = range(len(self))
+            # ToDo make a generator for not fetching data after a stop in loop occurred
+            return iter(
+                self.execute_raw_sql(self.query.limit(1, offset))[0]
+                for offset in range_list
+            )
+
+    def __getitem__(self, key):
+        """
+        Get rows where key matches the primary column
+
+        works like ``database.table[key]``
+
+        Parameters
+        ----------
+        key : any
+            matching value in primary column
+
+        Returns
+        -------
+        list
+            tuple items representing every matched row in database
+
+        """
+
+        if not self.primary:
+            raise AttributeError(
+                "table has no primary_key column. operation not permitted"
+            )
+
+        self.query.add_where_statements(**{self.primary: key})
+        data = self.run_query()
+        if len(data) != 1:
+            raise KeyError(f"{key} not in table {self.name}")
+        [row] = data
+        return Row(self, row)
+
+    def get_where(self, *args, **kwargs):
+        """
+        Get rows where value matches the defined column: ``columns=key``
+
+        Parameters
+        ----------
+        **kwargs
+            column = key values
+
+        Returns
+        -------
+        list
+            tuple items representing every matched row in database
+
+        """
+        self.query.add_where_statements(args, **kwargs)
+        rows = [Row(self, row) for row in self.run_query()]
+        return rows
+
+    def _parse_input_row_data(self, row: (list, dict), primary_key=None):
+        if isinstance(row, dict) and primary_key:
+            row[self.primary] = primary_key
+            return row
+
+        elif isinstance(row, dict):
+            return row
+
+        elif isinstance(row, list):
+            if primary_key:
+                row.insert(self.schema[self.primary], primary_key)
+            if len(row) != len(self.schema):
+                raise ValueError(
+                    f"length of given row (given {len(row)} must be same length of table "
+                    f"({len(self.schema)})\nemtpy values must be represented with '' or str()"
+                )
+            data = dict()
+            for pos in range(len(row)):
+                if row[pos] != "":
+                    data[list(self.schema.keys())[pos]] = row[pos]
+            return data
+
+        else:
+            raise TypeError("row must be either list or dict")
+
+    def __setitem__(self, primary_key, row):
+        """
+
+        Parameters
+        ----------
+        primary_key : str, None
+            the key of the primary column. If None -> new row inserted
+        row : list, dict
+            the row data in either correct order or in a dict with column_name
+
+        Returns
+        -------
+
+        """
+        if not self.primary:
+            raise AttributeError(
+                "table has no primary_key column. operation not permitted"
+            )
+
+        if isinstance(row, list) and len(row) + 1 != len(self.schema):
+            raise ValueError(
+                "row must be same length as table (without primary key) with '' for emtpy values"
+            )
+
+        try:
+            self.__getitem__(primary_key)
+            if isinstance(row, list):
+                row.insert(list(self.schema.keys()).index(self.primary), primary_key)
+            elif isinstance(row, dict):
+                row[self.primary] = primary_key
+            self.update_where(row, primary_key=primary_key)
+        except KeyError:
+            self.insert(row, primary_key)
+
+    def update_where(
+        self,
+        row: (list, dict),
+        primary_key=None,
+        limit_rows: int = False,
+        *args,
+        **kwargs,
+    ):
+        if primary_key:
+            kwargs[self.primary] = primary_key
+
+        row = self._parse_input_row_data(row)
+
+        self.query.add_new_values(**row)
+
+        self.query.add_where_statements(*args, **kwargs)
+        if limit_rows:
+            self.query.limit(limit_rows)
+
+        self.run_query()
+
+    def insert(self, row: (list, dict), primary_key=None):
+        row = self._parse_input_row_data(row, primary_key)
+
+        self.query.add_new_values(**row)
+        self.run_query()
+
+    def __delitem__(self, key):
+        if not self.primary:
+            raise AttributeError(
+                "table has no primary_key column. operation not permitted"
+            )
+
+        self.__getitem__(key)
+        self.delete_where(**{self.primary: key})
+
+    def delete_where(self, *args, **kwargs):
+        if not args and not kwargs:
+            raise OverflowError("Please use truncate to delete the hole table")
+        self.query.delete_request()
+        self.query.add_where_statements(*args, **kwargs)
+        self.run_query()
+
+    def as_dict(self):
+        if not self.primary:
+            raise AttributeError(
+                "table has no primary_key column. operation not permitted"
+            )
+
+        # ToDo download all data and return as dict
+        raise NotImplemented("coming soon")
+
+    def as_rows(self):
+        # ToDo download all data and return as rows
+        raise NotImplemented("coming soon")
+
+    def as_df(self):
+        # ToDo download all data and return as pandas.dataframe
+        raise NotImplemented("coming soon")
+
+    # ToDo implement TRUNCATE
+
+    # ToDo implement min/max
+
+    # ToDo implement is (not) NULL
+
+
+class Row:
+    """
+    Representation of a database row entry
+
+    Parameters
+    ----------
+    table: Table
+        table belonging to
+    data: list, tuple, dict
+        data to represent
+    """
+
+    def __init__(self, table, data):
+        self.__table = table
+        self.__schema = table.schema
+        self.__columns = table.schema.keys()
+
+        if isinstance(data, (list, tuple)):
+            self.__content = OrderedDict()
+            pos = 0
+            for key in table.schema:
+                self.__content[key] = data[pos]
+                pos += 1
+
+        elif isinstance(data, (dict, OrderedDict)):
+            if not all(key in table.schema for key in data):
+                raise ValueError("columns of row not in table schema")
+            self.__content = data
+
+        else:
+            raise TypeError(f"data must be either list or dict, not {type(data)}")
+
+    def schema_validation(self, key, value):
+        # ToDo do local schema validation for saving time in connection to server?
+        return True
+
+    def _where_reference_to_row(self, *missing_columns):
+        """
+        Create a query reference to the belonging row
+
+        """
+
+        if self.__table.primary:
+            self.__table.query.add_where_statements(
+                **{self.__table.primary: self.__content[self.__table.primary]}
+            )
+        else:
+            if missing_columns:
+                columns = set(self.__table.schema.keys()) - set(missing_columns)
+                self.__table.query.add_desired_columns(*columns)
+            self.__table.query.add_where_statements(**self.__content)
+            self.__table.query.limit(1)
+
+    def sync(self, *missing_columns):
+        self._where_reference_to_row(*missing_columns)
+        if not self.__table.primary:
+            self.__table.query.limit(1)
+        try:
+            self.__init__(self.__table, self.__table.run_query()[0])
+        except IndexError:
+            raise LookupError("The query did not work, no result from database")
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            key = list(self.__columns)[key]
+        elif not isinstance(key, str):
+            raise TypeError("only int for position or str for column name allowed")
+
+        return Item(self, key, self.__table, self.__content[key])
+
+    def __setitem__(self, column, value):
+        if isinstance(column, int):
+            column = list(self.__columns)[column]
+        elif not isinstance(column, str):
+            raise TypeError("only int for position or str for column name allowed")
+
+        if not self.schema_validation(column, value):
+            raise TypeError(
+                f"wrong data type! for given column `{column}` type {self.__schema[column]['type']} required"
+            )
+
+        if not self.__table.primary or column == self.__table.primary:
+            self.__table.update_where({column: value}, limit_rows=1, **self.__content)
+        else:
+            self.__table.update_where(
+                {column: value},
+                **{self.__table.primary: self.__content[self.__table.primary]},
+            )
+
+        self.sync(column)
+
+    def __delitem__(self, column):
+
+        if isinstance(column, int):
+            column = list(self.__columns)[column]
+        elif not isinstance(column, str):
+            raise TypeError("only int for position or str for column_name allowed")
+
+        self.__setitem__(column, self.__schema[column]["default"])
+
+    def __len__(self):
+        return len(self.__content.values())
+
+    def __repr__(self):
+        return repr(self.__content)
+
+    def __iter__(self):
+        return iter(self.__content.values())
+
+    def __str__(self):
+        return str(tuple(self.__content.values()))
+
+    def __dict__(self):
+        return self.__content
+
+
+class Item(object):
+    """
+    Representation of a database entry
+
+    Parameters
+    ----------
+    row: Row
+
+    column: str
+
+    table: Table
+
+    value: any
+    """
+
+    def __init__(self, row, column, table, value=None):
+        try:
+            self.__value = literal_eval(value)
+        except ValueError:
+            self.__value = value
+        self.__row = row
+        self.__column = column
+        self.__table = table
+        self.__real_type = table.schema[column]["type"]
+        self.__python_type = type(self.__value)
+        self._switchable_types = tuple()
+
+    @property
+    def value(self):
+        return self.__value
+
+    @property
+    def column(self):
+        return self.__column
+
+    @property
+    def table(self):
+        return self.__table
+
+    @property
+    def database(self):
+        return self.__table.database
+
+    def sync(self):
+        self.table.query.add_desired_columns(self.column)
+        self.__row._where_reference_to_row()
+        try:
+            result = self.table.run_query()
+            self.__value = result[0][0]
+            return self.__value
+        except IndexError:
+            raise LookupError("The query did not work, no result from database")
+
+    def __set__(self, instance, value):
+        if not isinstance(
+            value, (self.__python_type, type(None)) + self._switchable_types
+        ):
+            raise TypeError(f"expected {self.__python_type}, got {type(value)}")
+        # ToDo schema validation
+        self.table.query.add_new_values(**{self.column: value})
+        self.__row._where_reference_to_row(self.column)
+        self.table.run_query()
+
+        self.sync()
+
+    def __delete__(self, instance):
+
+        self.__set__(self, self.table.schema[self.column]["default"])
+
+    def __repr__(self):
+        return repr(self.__value)
+
+    def __int__(self):
+        return int(self.__value)
+
+    def __float__(self):
+        return float(self.__value)
+
+    def __str__(self):
+        return str(self.__value)
+
+    def __iter__(self):
+        return iter(self.__value)
+
+    def __len__(self):
+        return len(self.__value)
+
+    def __getitem__(self, item):
+        if isinstance(self.__value, dict):
+            return self.__value[item]
+        else:
+            raise TypeError("'Item' object is not subscribable")
