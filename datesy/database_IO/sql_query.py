@@ -1,7 +1,7 @@
 _dual_value_commands = ["between", "not between"]
-_string_commands = ["contains", "not contains", "not like", "like", "in", "not in"]
-_allowed_sql_query_commands = ["not", "<>", "!=", "=", "<", ">", "between", "not between",
-                               "is", "is not", "in", "not in"]
+_revert_commands = ["in", "not in"]
+_string_commands = ["contains", "not contains", "not like", "like"] + _revert_commands
+_allowed_sql_query_commands = ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not"] + _dual_value_commands + _string_commands
 _command_translations = {"contains": "like", "not contains": "not like", "!=": "<>", "in": "like", "not in": "not like"}
 
 
@@ -64,16 +64,28 @@ class SQLQueryConstructor:
             self._affected_columns.append(column)
         return self
 
-    def add_where_statements(self, column=None, command=None, value=None, *args, **kwargs):    # ToDo catch OR
+    def add_where_statements(self, args=tuple(tuple()), *, column=None, command=None, value=None, **kwargs):    # ToDo catch OR
         for key in kwargs:
-            self._wheres.append(f"(`{key}` = {kwargs[key]})")
+            statement = f"({key} = {kwargs[key]})"
+            self._wheres.append(statement)
+            # print(self._wheres)
+            # self._wheres.append(statement)
 
-        args = list(args)
-        args.append((column, command, value))
+        if args:
+            if isinstance(args, str):
+                args = [args]
+            elif isinstance(args[0], tuple):
+                args = list(args)
+            else:
+                args = [args]
+        if column and command and value:
+            args.append((column, command, value))
 
         for statement in args:
+            if isinstance(statement, str):
+                statement = statement.split(" ")
             if not isinstance(statement, (list, tuple)):
-                raise TypeError("must be list or tuple")
+                raise TypeError("must be list or tuple, or string with spaces between column, command and value")
             if len(statement) != 3:
                 raise IndexError("each statement length must be 3: column, command, value")
 
@@ -86,6 +98,8 @@ class SQLQueryConstructor:
                 statement[2] = f"{statement[2][0]} AND {statement[2][1]}"
             if statement[1].lower() in _string_commands:
                 statement[2] = f"'%{statement[2]}%'"
+            if statement[1].lower() in _revert_commands:
+                statement = statement[::-1]
 
             # translating commands
             if statement[1] in _command_translations:
@@ -94,7 +108,7 @@ class SQLQueryConstructor:
             if statement[2] is None:
                 statement[2] = "NULL"
 
-            self._wheres.append(f"(`{column}` {command} {value})")
+            self._wheres.append(f"(`{statement[0]}` {statement[1]} {statement[2]})")
         return self
 
     def add_join(self, table_1, column_1, table_2, column_2, join_type="INNER", **further_columns):
@@ -136,7 +150,8 @@ class SQLQueryConstructor:
             ``column = value``
 
         """
-        self._updates[column] = value
+        if column:
+            self._updates[column] = value
         self._updates.update(kwargs)
         return self
 
@@ -196,17 +211,16 @@ class SQLQueryConstructor:
 
         elif self._updates:
             if self._wheres:
-                set_value = ", ".join([f"{key} = {value}" for key, value in self._updates.items()])
+                set_value = ", ".join([f"{key} = '{value}'" if value is not None else f"{key} = NULL" for key, value in self._updates.items()])
                 query = f"UPDATE {self.name} SET {set_value}"
             else:
                 update_items = tuple(self._updates.items())
                 columns = ", ".join([i[0] for i in update_items])
-                values = ", ".join([i[1] for i in update_items])
+                values = ", ".join([f"'{i[1]}'" for i in update_items if i[1] is not None])
                 query = f"INSERT INTO {self.name} ({columns}) VALUES ({values})"
 
         elif self._length:
             query = f"SELECT{' DISTINCT' if self._distinct else ''} COUNT({columns}) FROM {self.name}"
-            self._order_by = dict()
         else:
             query = f"SELECT {columns} FROM {self.name}"
 
@@ -216,7 +230,7 @@ class SQLQueryConstructor:
         if self._wheres:
             query += " WHERE " + " AND ".join(self._wheres)
 
-        if self._order_by:
+        if self._order_by and not self._updates and not self._delete and not self._length:
             if self._affected_columns:
                 for column in self._order_by.copy():
                     if column not in self._affected_columns:
@@ -233,3 +247,7 @@ class SQLQueryConstructor:
         if not self._consistent:
             self.__init__(self._database_name, self._table_name, self._primary)     # flush all entries
         return query + ";"
+
+    # for debugging
+    # def __str__(self):
+    #     return str(self.__dict__)

@@ -36,8 +36,10 @@ class MySQL(Database):
         super().__init__(host, port, user, password, database, auto_creation)
 
     def _connect_to_db(self):
-        self._conn = mysql.connector.connect(host=self._host, user=self._user, passwd=self._password, db=self._database)
+        self._conn = mysql.connector.connect(host=self._host, user=self._user, passwd=self._password, db=self.name)
         self._cursor = self._conn.cursor()
+
+    # ToDo catch unread cursor on unread data when closing
 
     def _construct_all_tables(self):
         self._check_auto_creation()
