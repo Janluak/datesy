@@ -1,8 +1,18 @@
 _dual_value_commands = ["between", "not between"]
 _revert_commands = ["in", "not in"]
 _string_commands = ["contains", "not contains", "not like", "like"] + _revert_commands
-_allowed_sql_query_commands = ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not"] + _dual_value_commands + _string_commands
-_command_translations = {"contains": "like", "not contains": "not like", "!=": "<>", "in": "like", "not in": "not like"}
+_allowed_sql_query_commands = (
+    ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not"]
+    + _dual_value_commands
+    + _string_commands
+)
+_command_translations = {
+    "contains": "like",
+    "not contains": "not like",
+    "!=": "<>",
+    "in": "like",
+    "not in": "not like",
+}
 
 
 class SQLQueryConstructor:
@@ -11,14 +21,15 @@ class SQLQueryConstructor:
     Various different statements may be given without taking care of the order.
     Once fetched, all statements will be deleted and new basic query starts with ``SELECT * FROM table_name``.
     """
+
     def __init__(self, database_name, table_name, primary=str()):
-        self._consistent = False       # for flagging inconsistent constructor
+        self._consistent = False  # for flagging inconsistent constructor
         self._database_name = database_name
         self._table_name = table_name
         self.name = f"`{database_name}`.`{table_name}`"
         self._primary = primary
 
-        self._affected_columns = list()   # all columns relevant for request
+        self._affected_columns = list()  # all columns relevant for request
 
         self._delete = False
         self._length = False
@@ -28,9 +39,9 @@ class SQLQueryConstructor:
         self._joins = list()
         self._wheres = list()
 
-        self._affected_rows = int()           # limit of rows
+        self._affected_rows = int()  # limit of rows
         self._offset_affected_rows = int()
-        self._order_by = {primary: "ASC"} if primary else dict()          # columns to order by
+        self._order_by = {primary: "ASC"} if primary else dict()  # columns to order by
 
     @property
     def columns(self):
@@ -64,7 +75,9 @@ class SQLQueryConstructor:
             self._affected_columns.append(column)
         return self
 
-    def add_where_statements(self, args=tuple(tuple()), *, column=None, command=None, value=None, **kwargs):    # ToDo catch OR
+    def add_where_statements(
+        self, args=tuple(tuple()), *, column=None, command=None, value=None, **kwargs
+    ):  # ToDo catch OR
         for key in kwargs:
             statement = f"({key} = {kwargs[key]})"
             self._wheres.append(statement)
@@ -85,13 +98,19 @@ class SQLQueryConstructor:
             if isinstance(statement, str):
                 statement = statement.split(" ")
             if not isinstance(statement, (list, tuple)):
-                raise TypeError("must be list or tuple, or string with spaces between column, command and value")
+                raise TypeError(
+                    "must be list or tuple, or string with spaces between column, command and value"
+                )
             if len(statement) != 3:
-                raise IndexError("each statement length must be 3: column, command, value")
+                raise IndexError(
+                    "each statement length must be 3: column, command, value"
+                )
 
             # allowed statements
             if statement[1].lower() not in _allowed_sql_query_commands:
-                raise ValueError(f"unsupported argument {statement[1]}, only allowed: {_allowed_sql_query_commands}")
+                raise ValueError(
+                    f"unsupported argument {statement[1]}, only allowed: {_allowed_sql_query_commands}"
+                )
 
             # handling special commands
             if statement[1].lower() in _dual_value_commands:
@@ -111,7 +130,9 @@ class SQLQueryConstructor:
             self._wheres.append(f"(`{statement[0]}` {statement[1]} {statement[2]})")
         return self
 
-    def add_join(self, table_1, column_1, table_2, column_2, join_type="INNER", **further_columns):
+    def add_join(
+        self, table_1, column_1, table_2, column_2, join_type="INNER", **further_columns
+    ):
         """
         Add join of two tables
 
@@ -135,7 +156,9 @@ class SQLQueryConstructor:
         self._joins.append(join)
         return self
 
-    def add_new_values(self, column=None, value=None, **kwargs):     # column=value for each entry to set
+    def add_new_values(
+        self, column=None, value=None, **kwargs
+    ):  # column=value for each entry to set
         """
         Updates/inserts rows
         if where_statements present, update these rows. else insert new row
@@ -197,7 +220,7 @@ class SQLQueryConstructor:
         return self
 
     # ### calculate query ###
-    def __repr__(self):     # construct a query for execution
+    def __repr__(self):  # construct a query for execution
         if self._affected_columns:
             columns = f"{', '.join([i for i in self._affected_columns])}"
         else:
@@ -211,12 +234,19 @@ class SQLQueryConstructor:
 
         elif self._updates:
             if self._wheres:
-                set_value = ", ".join([f"{key} = '{value}'" if value is not None else f"{key} = NULL" for key, value in self._updates.items()])
+                set_value = ", ".join(
+                    [
+                        f"{key} = '{value}'" if value is not None else f"{key} = NULL"
+                        for key, value in self._updates.items()
+                    ]
+                )
                 query = f"UPDATE {self.name} SET {set_value}"
             else:
                 update_items = tuple(self._updates.items())
                 columns = ", ".join([i[0] for i in update_items])
-                values = ", ".join([f"'{i[1]}'" for i in update_items if i[1] is not None])
+                values = ", ".join(
+                    [f"'{i[1]}'" for i in update_items if i[1] is not None]
+                )
                 query = f"INSERT INTO {self.name} ({columns}) VALUES ({values})"
 
         elif self._length:
@@ -230,7 +260,12 @@ class SQLQueryConstructor:
         if self._wheres:
             query += " WHERE " + " AND ".join(self._wheres)
 
-        if self._order_by and not self._updates and not self._delete and not self._length:
+        if (
+            self._order_by
+            and not self._updates
+            and not self._delete
+            and not self._length
+        ):
             if self._affected_columns:
                 for column in self._order_by.copy():
                     if column not in self._affected_columns:
@@ -245,7 +280,9 @@ class SQLQueryConstructor:
             query += f" OFFSET {self._offset_affected_rows}"
 
         if not self._consistent:
-            self.__init__(self._database_name, self._table_name, self._primary)     # flush all entries
+            self.__init__(
+                self._database_name, self._table_name, self._primary
+            )  # flush all entries
         return query + ";"
 
     # for debugging

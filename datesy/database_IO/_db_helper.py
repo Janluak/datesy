@@ -35,7 +35,11 @@ class Database:
 
     def __init__(self, host, port, user, password, database, auto_creation=False):
         import warnings
-        warnings.warn("\n\nDatabase interface still in development. Changes may apply\n", UserWarning)
+
+        warnings.warn(
+            "\n\nDatabase interface still in development. Changes may apply\n",
+            UserWarning,
+        )
         self._host = host
         self._port = port
         self._user = user
@@ -110,10 +114,14 @@ class Database:
     def _check_auto_creation(self):
         doubles = set(self.__dir__()).intersection(set(self.tables))
         if doubles:
-            raise EnvironmentError(f"builtin function of class matches table_name in database {self.name}\n"
-                                   f"can't create all tables as attributes to database_object\n"
-                                   f"please disable auto_creation or rename matching table '{doubles}' in database")
-        hidden_values = {table_name for table_name in self.tables if "__" == table_name[0:2] }
+            raise EnvironmentError(
+                f"builtin function of class matches table_name in database {self.name}\n"
+                f"can't create all tables as attributes to database_object\n"
+                f"please disable auto_creation or rename matching table '{doubles}' in database"
+            )
+        hidden_values = {
+            table_name for table_name in self.tables if "__" == table_name[0:2]
+        }
         if any("__" == table_name[0:2] for table_name in self.tables):
             logging.warning(
                 f"table_name in database {self.name} contains '__' in beginning -> not accessable with `Python` "
@@ -147,6 +155,7 @@ class Table:
     database : Database
 
     """
+
     def __init__(self, table_name, database):
         self.__table_name = table_name
         self.__db = database
@@ -207,8 +216,13 @@ class Table:
         if not self.__schema:
             for row in self.execute_raw_sql(self._schema_update_query):
                 # ToDo check for more available data via SQL/maybe putting to db specific subclass
-                self.__schema[row[0]] = {"type": row[1], "null": row[2], "key": row[3], "default": row[4],
-                                         "extra": row[5]}
+                self.__schema[row[0]] = {
+                    "type": row[1],
+                    "null": row[2],
+                    "key": row[3],
+                    "default": row[4],
+                    "extra": row[5],
+                }
         return self.__schema
 
     @property
@@ -278,8 +292,10 @@ class Table:
         else:
             range_list = range(len(self))
             # ToDo make a generator for not fetching data after a stop in loop occurred
-            return iter(self.execute_raw_sql(self.query.limit(1, offset))[0]
-                        for offset in range_list)
+            return iter(
+                self.execute_raw_sql(self.query.limit(1, offset))[0]
+                for offset in range_list
+            )
 
     def __getitem__(self, key):
         """
@@ -300,7 +316,9 @@ class Table:
         """
 
         if not self.primary:
-            raise AttributeError("table has no primary_key column. operation not permitted")
+            raise AttributeError(
+                "table has no primary_key column. operation not permitted"
+            )
 
         self.query.add_where_statements(**{self.primary: key})
         data = self.run_query()
@@ -340,8 +358,10 @@ class Table:
             if primary_key:
                 row.insert(self.schema[self.primary], primary_key)
             if len(row) != len(self.schema):
-                raise ValueError(f"length of given row (given {len(row)} must be same length of table "
-                                 f"({len(self.schema)})\nemtpy values must be represented with '' or str()")
+                raise ValueError(
+                    f"length of given row (given {len(row)} must be same length of table "
+                    f"({len(self.schema)})\nemtpy values must be represented with '' or str()"
+                )
             data = dict()
             for pos in range(len(row)):
                 if row[pos] != "":
@@ -366,10 +386,14 @@ class Table:
 
         """
         if not self.primary:
-            raise AttributeError("table has no primary_key column. operation not permitted")
+            raise AttributeError(
+                "table has no primary_key column. operation not permitted"
+            )
 
         if isinstance(row, list) and len(row) + 1 != len(self.schema):
-            raise ValueError("row must be same length as table (without primary key) with '' for emtpy values")
+            raise ValueError(
+                "row must be same length as table (without primary key) with '' for emtpy values"
+            )
 
         try:
             self.__getitem__(primary_key)
@@ -381,7 +405,14 @@ class Table:
         except KeyError:
             self.insert(row, primary_key)
 
-    def update_where(self, row: (list, dict), primary_key=None, limit_rows: int=False, *args, **kwargs):
+    def update_where(
+        self,
+        row: (list, dict),
+        primary_key=None,
+        limit_rows: int = False,
+        *args,
+        **kwargs,
+    ):
         if primary_key:
             kwargs[self.primary] = primary_key
 
@@ -403,7 +434,9 @@ class Table:
 
     def __delitem__(self, key):
         if not self.primary:
-            raise AttributeError("table has no primary_key column. operation not permitted")
+            raise AttributeError(
+                "table has no primary_key column. operation not permitted"
+            )
 
         self.__getitem__(key)
         self.delete_where(**{self.primary: key})
@@ -417,7 +450,9 @@ class Table:
 
     def as_dict(self):
         if not self.primary:
-            raise AttributeError("table has no primary_key column. operation not permitted")
+            raise AttributeError(
+                "table has no primary_key column. operation not permitted"
+            )
 
         # ToDo download all data and return as dict
         raise NotImplemented("coming soon")
@@ -480,7 +515,9 @@ class Row:
         """
 
         if self.__table.primary:
-            self.__table.query.add_where_statements(**{self.__table.primary: self.__content[self.__table.primary]})
+            self.__table.query.add_where_statements(
+                **{self.__table.primary: self.__content[self.__table.primary]}
+            )
         else:
             if missing_columns:
                 columns = set(self.__table.schema.keys()) - set(missing_columns)
@@ -512,12 +549,17 @@ class Row:
             raise TypeError("only int for position or str for column name allowed")
 
         if not self.schema_validation(column, value):
-            raise TypeError(f"wrong data type! for given column `{column}` type {self.__schema[column]['type']} required")
+            raise TypeError(
+                f"wrong data type! for given column `{column}` type {self.__schema[column]['type']} required"
+            )
 
         if not self.__table.primary or column == self.__table.primary:
             self.__table.update_where({column: value}, limit_rows=1, **self.__content)
         else:
-            self.__table.update_where({column: value}, **{self.__table.primary: self.__content[self.__table.primary]})
+            self.__table.update_where(
+                {column: value},
+                **{self.__table.primary: self.__content[self.__table.primary]},
+            )
 
         self.sync(column)
 
@@ -528,7 +570,7 @@ class Row:
         elif not isinstance(column, str):
             raise TypeError("only int for position or str for column_name allowed")
 
-        self.__setitem__(column, self.__schema[column]['default'])
+        self.__setitem__(column, self.__schema[column]["default"])
 
     def __len__(self):
         return len(self.__content.values())
@@ -560,6 +602,7 @@ class Item(object):
 
     value: any
     """
+
     def __init__(self, row, column, table, value=None):
         try:
             self.__value = literal_eval(value)
@@ -599,7 +642,9 @@ class Item(object):
             raise LookupError("The query did not work, no result from database")
 
     def __set__(self, instance, value):
-        if not isinstance(value, (self.__python_type, type(None)) + self._switchable_types):
+        if not isinstance(
+            value, (self.__python_type, type(None)) + self._switchable_types
+        ):
             raise TypeError(f"expected {self.__python_type}, got {type(value)}")
         # ToDo schema validation
         self.table.query.add_new_values(**{self.column: value})
