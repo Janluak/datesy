@@ -194,7 +194,7 @@ class SQLQueryConstructor:
         return self
 
     # ### organize operation ###
-    def order(self, column, increasing=True):
+    def order(self, column, increasing=True, foreign_table=False):
         """
         Order the result by column (and increasing or decreasing values)
 
@@ -204,16 +204,24 @@ class SQLQueryConstructor:
             string representation of a column
         increasing : bool, optional
             if increasing or decreasing ordering
+        foreign_table : str
+            of the order shall base on a column from foreign table from a join
 
         """
         if not isinstance(column, str):
             TypeError(f"column to order by must be string, given: {type(column)}")
-        if increasing:
-            self._order_by[column] = "ASC"
+
+        if foreign_table:
+            table = foreign_table
         else:
-            self._order_by[column] = "DESC"
+            table = self._table_name
+
+        if increasing:
+            self._order_by[f"{table}.{column}"] = "ASC"
+        else:
+            self._order_by[f"{table}.{column}"] = "DESC"
         if self._primary and self._primary in self._order_by:
-            del self._order_by[self._primary]
+            del self._order_by[f"{table}.{self._primary}"]
         return self
 
     def limit(self, number_of_rows, offset=int()):
