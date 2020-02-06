@@ -72,8 +72,23 @@ class SQLQueryConstructor:
     # ### give data for query ###
     def add_desired_columns(self, *args):
         for column in args:
-            self._affected_columns.append(column)
+            self._affected_columns.append(f"{self._table_name}.{column}")
         return self
+
+    def add_desired_columns_of_foreign_table(self, **kwargs):
+        """
+        Add desired columns from other table
+
+        Parameters
+        ----------
+        kwargs
+            key: table
+            value: column
+
+        """
+        for table in kwargs:
+            self._affected_columns.append(f"{table}.{kwargs[table]}")
+            return self
 
     def add_where_statements(
         self, args=tuple(tuple()), *, column=None, command=None, value=None, **kwargs
