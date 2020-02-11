@@ -257,13 +257,7 @@ class SQLQueryConstructor:
 
         elif self._updates:
             if self._wheres:
-                set_value = ", ".join(
-                    [
-                        f"{key} = '{value}'" if value is not None else f"{key} = NULL"
-                        for key, value in self._updates.items()
-                    ]
-                )
-                query = f"UPDATE {self.name} SET {set_value}"
+                query = f"UPDATE {self.name}"
             else:
                 update_items = tuple(self._updates.items())
                 columns = ", ".join([i[0] for i in update_items])
@@ -279,6 +273,15 @@ class SQLQueryConstructor:
 
         if self._joins:
             query += " " + " ".join(self._joins)
+
+        if self._updates and self._wheres:
+            set_value = ", ".join(
+                [
+                    f"{key} = '{value}'" if value is not None else f"{key} = NULL"
+                    for key, value in self._updates.items()
+                ]
+            )
+            query += f" SET {set_value}"
 
         if self._wheres:
             query += " WHERE " + " AND ".join(self._wheres)
