@@ -25,7 +25,7 @@ class SQLQueryConstructor:
         self._consistent = False  # for flagging inconsistent constructor
         self._database_name = database_name
         self._table_name = table_name
-        self.name = f"`{database_name}`.`{table_name}`"
+        self.name = self.__create_escaped_references(table_name, table=True)
         self._primary = primary
 
         self._affected_columns = list()  # all columns relevant for request
@@ -40,11 +40,33 @@ class SQLQueryConstructor:
 
         self._affected_rows = int()  # limit of rows
         self._offset_affected_rows = int()
-        self._order_by = {primary: "ASC"} if primary else dict()  # columns to order by
+        self._order_by = {self.__create_escaped_references(primary, column=True): "ASC"} if primary else dict()  # columns to order by
 
     @property
     def columns(self):
         return self._affected_columns
+
+    def __create_escaped_references(self, name, table=False, column=False):
+        if isinstance(name, str):
+            parts = name.split(".")
+        elif isinstance(name, (list, tuple)):
+            parts = name
+        else:
+            raise TypeError("name must be either str of column or table or a list with all specified values")
+
+        length = len(parts)
+        if table:
+            if length == 1:
+                return f"`{self._database_name}`.`{name}`"
+            if length == 2:
+                return f"`{parts[0]}`.`{parts[1]}`"
+        elif column:
+            if length == 1:
+                return f"`{self._database_name}`.`{self._table_name}`.`{name}`"
+            if length == 2:
+                return f"`{self._database_name}`.`{parts[0]}`.`{parts[1]}`"
+            if length == 3:
+                return f"`{parts[0]}`.`{parts[1]}`.`{parts[2]}`"
 
     # ### Basic request type ###
     def delete_request(self):
@@ -71,29 +93,36 @@ class SQLQueryConstructor:
     # ### give data for query ###
     def add_desired_columns(self, *args):
         for column in args:
-            self._affected_columns.append(f"{self._table_name}.{column}")
+            self._affected_columns.append(self.__create_escaped_references(column, column=True))
         return self
 
-    def add_desired_columns_of_foreign_table(self, **kwargs):
+    def add_desired_foreign_columns(self, *args, table, database=None):
         """
-        Add desired columns from other table
+        Add desired columns from other table or database
 
         Parameters
         ----------
-        kwargs
-            key: table
-            value: column
+        args : str
+            columns
+        table : str
+            foreign table name
+        database : str
+            foreign database name
 
         """
-        for table in kwargs:
-            self._affected_columns.append(f"{table}.{kwargs[table]}")
-            return self
+        if database is None:
+            database = self._database_name
+
+        for column in args:
+            reference = self.__create_escaped_references((database, table, column), column=True)
+            self._affected_columns.append(reference)
+        return self
 
     def add_where_statements(
         self, args=tuple(tuple()), *, column=None, command=None, value=None, **kwargs
     ):  # ToDo catch OR
         for key in kwargs:
-            statement = f"({key} = {kwargs[key]})"
+            statement = f"({self.__create_escaped_references(key, column=True)} = {kwargs[key]})"
             self._wheres.append(statement)
             # print(self._wheres)
             # self._wheres.append(statement)
@@ -126,6 +155,9 @@ class SQLQueryConstructor:
                     f"unsupported argument {statement[1]}, only allowed: {_allowed_sql_query_commands}"
                 )
 
+            # set column reference with escape chars
+            statement[0] = self.__create_escaped_references(statement[0], column=True)
+
             # handling special commands
             if statement[1].lower() in _dual_value_commands:
                 statement[2] = f"{statement[2][0]} AND {statement[2][1]}"
@@ -139,7 +171,7 @@ class SQLQueryConstructor:
             if statement[2] is None:
                 statement[2] = "NULL"
 
-            self._wheres.append(f"(`{statement[0]}` {statement[1]} {statement[2]})")
+            self._wheres.append(f"({statement[0]} {statement[1]} {statement[2]})")
         return self
 
     def add_join(
@@ -186,12 +218,15 @@ class SQLQueryConstructor:
 
         """
         if column:
-            self._updates[column] = value
+            self._updates[self.__create_escaped_references(column, column=True)] = value
+        for key in kwargs.copy():
+            kwargs[self.__create_escaped_references(key, column=True)] = kwargs[key]
+            del kwargs[key]
         self._updates.update(kwargs)
         return self
 
     # ### organize operation ###
-    def order(self, column, increasing=True, foreign_table=False):
+    def order(self, column, increasing=True, foreign_table=False, foreign_database=False):
         """
         Order the result by column (and increasing or decreasing values)
 
@@ -206,19 +241,24 @@ class SQLQueryConstructor:
 
         """
         if not isinstance(column, str):
-            TypeError(f"column to order by must be string, given: {type(column)}")
+            raise TypeError(f"column to order by must be string, given: {type(column)}")
+        if foreign_database and not foreign_table:
+            raise ValueError("if foreign database is given, the foreign table needs to be specified as well")
+
+        reference = [column]
 
         if foreign_table:
-            table = foreign_table
-        else:
-            table = self._table_name
+            reference.insert(0, foreign_table)
+        if foreign_database:
+            reference.insert(0, foreign_database)
+        reference = self.__create_escaped_references(reference, column=True)
 
         if increasing:
-            self._order_by[f"{table}.{column}"] = "ASC"
+            self._order_by[reference] = "ASC"
         else:
-            self._order_by[f"{table}.{column}"] = "DESC"
+            self._order_by[reference] = "DESC"
         if self._primary and self._primary in self._order_by:
-            del self._order_by[f"{table}.{self._primary}"]
+            del self._order_by[self.__create_escaped_references(self._primary, column=True)]
         return self
 
     def limit(self, number_of_rows, offset=int()):
