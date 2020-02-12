@@ -1,6 +1,5 @@
 _dual_value_commands = ["between", "not between"]
-_revert_commands = ["in", "not in"]
-_string_commands = ["contains", "not contains", "not like", "like"] + _revert_commands
+_string_commands = ["contains", "not contains", "not like", "like", "in", "not in"]
 _allowed_sql_query_commands = (
     ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not"]
     + _dual_value_commands
@@ -132,8 +131,6 @@ class SQLQueryConstructor:
                 statement[2] = f"{statement[2][0]} AND {statement[2][1]}"
             if statement[1].lower() in _string_commands:
                 statement[2] = f"'%{statement[2]}%'"
-            if statement[1].lower() in _revert_commands:
-                statement = statement[::-1]
 
             # translating commands
             if statement[1] in _command_translations:
