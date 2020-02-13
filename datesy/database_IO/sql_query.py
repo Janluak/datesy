@@ -1,16 +1,14 @@
 _dual_value_commands = ["between", "not between"]
-_string_commands = ["contains", "not contains", "not like", "like", "in", "not in"]
+_string_commands = ["contains", "not contains", "not like", "like"]
 _allowed_sql_query_commands = (
-    ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not"]
+    ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not", "in", "not in"]
     + _dual_value_commands
     + _string_commands
 )
 _command_translations = {
     "contains": "like",
     "not contains": "not like",
-    "!=": "<>",
-    "in": "like",
-    "not in": "not like",
+    "!=": "<>"
 }
 
 
@@ -57,12 +55,12 @@ class SQLQueryConstructor:
         length = len(parts)
         if table:
             if length == 1:
-                return f"`{self._database_name}`.`{name}`"
+                return f"`{self._database_name}`.`{parts[0]}`"
             if length == 2:
                 return f"`{parts[0]}`.`{parts[1]}`"
         elif column:
             if length == 1:
-                return f"`{self._database_name}`.`{self._table_name}`.`{name}`"
+                return f"`{self._database_name}`.`{self._table_name}`.`{parts[0]}`"
             if length == 2:
                 return f"`{self._database_name}`.`{parts[0]}`.`{parts[1]}`"
             if length == 3:
@@ -119,7 +117,7 @@ class SQLQueryConstructor:
         return self
 
     def add_where_statements(
-        self, args=tuple(tuple()), *, column=None, command=None, value=None, **kwargs
+        self, *args, column=None, command=None, value=None, **kwargs
     ):  # ToDo catch OR
         for key in kwargs:
             statement = f"({self.__create_escaped_references(key, column=True)} = {kwargs[key]})"
@@ -127,6 +125,7 @@ class SQLQueryConstructor:
             # print(self._wheres)
             # self._wheres.append(statement)
 
+        args = list(args)
         if args:
             if isinstance(args, str):
                 args = [args]
@@ -138,6 +137,7 @@ class SQLQueryConstructor:
             args.append((column, command, value))
 
         for statement in args:
+            statement = list(statement)
             if isinstance(statement, str):
                 statement = statement.split(" ")
             if not isinstance(statement, (list, tuple)):
@@ -156,7 +156,7 @@ class SQLQueryConstructor:
                 )
 
             # set column reference with escape chars
-            statement[0] = self.__create_escaped_references(statement[0], column=True)
+            statement = [self.__create_escaped_references(statement[0], column=True)] + statement[1:]
 
             # handling special commands
             if statement[1].lower() in _dual_value_commands:
@@ -175,29 +175,49 @@ class SQLQueryConstructor:
         return self
 
     def add_join(
-        self, table_1, column_1, table_2, column_2, join_type="INNER", **further_columns
+            self, column_1, column_2, join_type="INNER"
     ):
         """
         Add join of two tables
 
         Parameters
         ----------
-        table_1
-        column_1
-        table_2
-        column_2
-        further_columns
+        column_1 : str, tuple, list
+            string of column of desired join or iterable of ``[database (optional), table, column]``
+        column_2 : str, tuple, list
+            string of column of desired join or iterable of ``[database (optional), table, column]``
         join_type : str, optional
             specify the join type (choices= inner, left, right, full, self)
 
         """
         if join_type.lower() not in ["inner", "left", "right", "full", "self"]:
             raise ValueError(f"unsupported join type {join_type}")
-        join = f"{join_type} JOIN {column_2} ON {table_1}.{column_1} = {table_2}.{column_2}"
-        if further_columns:
-            raise NotImplemented
-            # ToDo improve handling of joins
-        self._joins.append(join)
+
+        if not all(isinstance(i, (str, list, tuple)) for i in [column_1, column_2]):
+            raise TypeError(f"column_1 and column_2 must be both either string or iterable")
+
+        column_1 = self.__create_escaped_references(column_1, column=True)
+        column_2 = self.__create_escaped_references(column_2, column=True)
+        table_1 = ".".join(column_1.split(".")[:-1])
+        table_2 = ".".join(column_2.split(".")[:-1])
+
+        if table_1 == self.name:
+            __join = f"{join_type} JOIN {table_2} ON {column_1}={column_2}"
+        elif table_2 == self.name:
+            __join = f"{join_type} JOIN {table_1} ON {column_2}={column_1}"
+        else:
+            for i in self._joins[::-1]:
+                if table_1 in i:
+                    __join = f"{join_type} JOIN {table_2} ON {column_1}={column_2}"
+                    break
+                elif table_2 in i:
+                    __join = f"{join_type} JOIN {table_1} ON {column_2}={column_1}"
+                    break
+
+        try:
+            self._joins.append(__join)
+        except NameError:
+            raise ValueError("cant join on any already existing tables of this query")
         return self
 
     def add_new_values(
