@@ -1,9 +1,9 @@
 _dual_value_commands = ["between", "not between"]
 _string_commands = ["contains", "not contains", "not like", "like"]
 _allowed_sql_query_commands = (
-    ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not", "in", "not in"]
-    + _dual_value_commands
-    + _string_commands
+        ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not", "in", "not in"]
+        + _dual_value_commands
+        + _string_commands
 )
 _command_translations = {
     "contains": "like",
@@ -39,7 +39,8 @@ class SQLQueryConstructor:
 
         self._affected_rows = int()  # limit of rows
         self._offset_affected_rows = int()
-        self._order_by = {self.__create_escaped_references(primary, column=True): "ASC"} if primary else dict()  # columns to order by
+        self._order_by = {
+            self.__create_escaped_references(primary, column=True): "ASC"} if primary else dict()  # columns to order by
 
     @property
     def columns(self):
@@ -118,7 +119,7 @@ class SQLQueryConstructor:
         return self
 
     def add_where_statements(
-        self, *args, column=None, command=None, value=None, OR=False, **kwargs
+            self, *args, column=None, command=None, value=None, OR=False, **kwargs
     ):
         wheres = list()
         for key in kwargs:
@@ -238,7 +239,7 @@ class SQLQueryConstructor:
         return self
 
     def add_new_values(
-        self, column=None, value=None, **kwargs
+            self, column=None, value=None, **kwargs
     ):  # column=value for each entry to set
         """
         Updates/inserts rows
@@ -363,10 +364,10 @@ class SQLQueryConstructor:
             query += " WHERE " + " AND ".join(self._wheres)
 
         if (
-            self._order_by
-            and not self._updates
-            and not self._delete
-            and not self._length
+                self._order_by
+                and not self._updates
+                and not self._delete
+                and not self._length
         ):
             if self._affected_columns:
                 for column in self._order_by.copy():
