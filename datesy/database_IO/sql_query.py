@@ -35,6 +35,7 @@ class SQLQueryConstructor:
         self._updates = dict()
         self._joins = list()
         self._wheres = list()
+        self._where_or = False
 
         self._affected_rows = int()  # limit of rows
         self._offset_affected_rows = int()
@@ -117,13 +118,12 @@ class SQLQueryConstructor:
         return self
 
     def add_where_statements(
-        self, *args, column=None, command=None, value=None, **kwargs
-    ):  # ToDo catch OR
+        self, *args, column=None, command=None, value=None, OR=False, **kwargs
+    ):
+        wheres = list()
         for key in kwargs:
             statement = f"({self.__create_escaped_references(key, column=True)} = {kwargs[key]})"
-            self._wheres.append(statement)
-            # print(self._wheres)
-            # self._wheres.append(statement)
+            wheres.append(statement)
 
         args = list(args)
         if args:
@@ -171,7 +171,24 @@ class SQLQueryConstructor:
             if statement[2] is None:
                 statement[2] = "NULL"
 
-            self._wheres.append(f"({statement[0]} {statement[1]} {statement[2]})")
+            wheres.append(f"({statement[0]} {statement[1]} {statement[2]})")
+
+        if len(wheres) == 1 and self._where_or:
+            last_where = self._wheres[-1]
+            self._wheres[-1] = f"({last_where} OR {wheres[0]})"
+            self._where_or = False
+
+        elif OR and len(wheres) == 1:
+            self._where_or = True
+            self._wheres.append(wheres[0])
+
+        elif OR and len(wheres) > 1:
+            wheres = f"({' OR '.join(wheres)})"
+            self._wheres.append(wheres)
+
+        else:
+            for where in wheres:
+                self._wheres.append(where)
         return self
 
     def add_join(
