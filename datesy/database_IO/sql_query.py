@@ -248,16 +248,18 @@ class SQLQueryConstructor:
         ----------
         column : str, optional
             column name to set value to
-        value : str, int, list, dict, set, tuple, optional
-            value to be set (bool will be interpreted as string?) # ToDo databases have boolean? how to set?
+        value : str, int, list, dict, set, tuple, bool, optional
+            value to be set (bool will be interpreted as string ``'True'/'False'``)
         kwargs
             ``column = value``
 
         """
         if column:
-            self._updates[self.__create_escaped_references(column, column=True)] = value
+            self._updates[self.__create_escaped_references(column, column=True)] = value \
+                if not isinstance(value, bool) else {True: 1, False: 0}[value]
         for key in kwargs.copy():
-            kwargs[self.__create_escaped_references(key, column=True)] = kwargs[key]
+            kwargs[self.__create_escaped_references(key, column=True)] = kwargs[key] \
+                if not isinstance(kwargs[key], bool) else {True: 1, False: 0}[value]
             del kwargs[key]
         self._updates.update(kwargs)
         return self
