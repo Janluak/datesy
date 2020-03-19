@@ -317,7 +317,7 @@ class SQLQueryConstructor:
         return self
 
     # ### calculate query ###
-    def __repr__(self):  # construct a query for execution
+    def __str__(self):  # construct a query for execution
         if self._affected_columns:
             columns = f"{', '.join([i for i in self._affected_columns])}"
         else:
@@ -384,7 +384,3 @@ class SQLQueryConstructor:
                 self._database_name, self._table_name, self._primary
             )  # flush all entries
         return query + ";"
-
-    # for debugging
-    # def __str__(self):
-    #     return str(self.__dict__)

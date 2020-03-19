@@ -177,7 +177,7 @@ class Table:
         return self.__query
 
     def run_query(self):
-        return self.execute_raw_sql(repr(self.query))
+        return self.execute_raw_sql(str(self.query))
 
     def execute_raw_sql(self, sql_query):
         """
