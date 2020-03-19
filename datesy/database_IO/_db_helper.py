@@ -163,6 +163,7 @@ class Table:
         self.__schema = OrderedDict()
         self.__primary = str()  # primary key
         self.__query = SQLQueryConstructor(self.database.name, self.name, self.primary)
+        self._debug_query: bool = False
 
     @property
     def name(self):
@@ -176,8 +177,11 @@ class Table:
     def query(self):
         return self.__query
 
-    def run_query(self):
-        return self.execute_raw_sql(str(self.query))
+    def run_query(self, debug=False):
+        query = str(self.query)
+        if debug or self._debug_query:
+            print(query)
+        return self.execute_raw_sql(query)
 
     def execute_raw_sql(self, sql_query):
         """
