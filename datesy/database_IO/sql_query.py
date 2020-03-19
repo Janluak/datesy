@@ -126,21 +126,18 @@ class SQLQueryConstructor:
             statement = f"({self.__create_escaped_references(key, column=True)} = {kwargs[key]})"
             wheres.append(statement)
 
-        args = list(args)
-        if args:
-            if isinstance(args, str):
-                args = [args]
-            elif isinstance(args[0], tuple):
-                args = list(args)
-            else:
-                args = [args]
-        if column and command and value:
-            args.append((column, command, value))
+        statements = list()
+        for arg in args:
+            statements.append(arg)
 
-        for statement in args:
-            statement = list(statement)
+        if column and command and value:
+            statements.append((column, command, value))
+
+        for statement in statements:
             if isinstance(statement, str):
                 statement = statement.split(" ")
+            else:
+                statement = list(statement)
             if not isinstance(statement, (list, tuple)):
                 raise TypeError(
                     "must be list or tuple, or string with spaces between column, command and value"
