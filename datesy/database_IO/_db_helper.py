@@ -412,9 +412,9 @@ class Table:
     def update_where(
         self,
         row: (list, dict),
+        *args,
         primary_key=None,
         limit_rows: int = False,
-        *args,
         **kwargs,
     ):
         if primary_key:
