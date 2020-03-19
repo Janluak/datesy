@@ -139,9 +139,7 @@ def dict_to_rows(
     return rows
 
 
-def dict_to_pandas_data_frame(
-    data, main_key_name=None, order=None, inverse=False
-):
+def dict_to_pandas_data_frame(data, main_key_name=None, order=None, inverse=False):
     """
     Convert a dictionary to pandas.DataFrame
 

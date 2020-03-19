@@ -206,11 +206,21 @@ def __write_xlsx(file_name, data, auto_size_cells=True):
                 for column in worksheet.columns:
                     # only take unmerged cells into account
                     unmerged_cells = list(
-                        filter(lambda cell_to_check: cell_to_check.coordinate not in worksheet.merged_cells, column))
+                        filter(
+                            lambda cell_to_check: cell_to_check.coordinate
+                            not in worksheet.merged_cells,
+                            column,
+                        )
+                    )
                     # get length of longest line
-                    length = max(len(max(re.split("\n|\r", str(cell.value)))) for cell in unmerged_cells)
+                    length = max(
+                        len(max(re.split("\n|\r", str(cell.value))))
+                        for cell in unmerged_cells
+                    )
                     # set the length of each column
-                    worksheet.column_dimensions[unmerged_cells[0].column_letter].width = length + 3
+                    worksheet.column_dimensions[
+                        unmerged_cells[0].column_letter
+                    ].width = (length + 3)
                     # multi-line cells: automatic sizing of height
                     for cell in unmerged_cells:
                         cell.alignment = Alignment(wrapText=True)
@@ -218,7 +228,9 @@ def __write_xlsx(file_name, data, auto_size_cells=True):
         writer.save()
 
 
-def write_single_sheet_from_DataFrame(file_name, data_frame, sheet_name=None, auto_size_cells=True):
+def write_single_sheet_from_DataFrame(
+    file_name, data_frame, sheet_name=None, auto_size_cells=True
+):
     """
     Save a pandas.DataFrame to file
 
@@ -240,7 +252,9 @@ def write_single_sheet_from_DataFrame(file_name, data_frame, sheet_name=None, au
     __write_xlsx(file_name, [(sheet_name, data_frame)], auto_size_cells)
 
 
-def write_multi_sheet_from_DataFrames(file_name, data_frames, sheet_order=None, auto_size_cells=True):
+def write_multi_sheet_from_DataFrames(
+    file_name, data_frames, sheet_order=None, auto_size_cells=True
+):
     """
     Save multiple pandas.DataFrames to one file
 
@@ -262,13 +276,23 @@ def write_multi_sheet_from_DataFrames(file_name, data_frames, sheet_order=None, 
         order = _create_sorted_list_from_order(
             sheet_order, all_elements=data_frames.keys()
         )
-        __write_xlsx(file_name, [(key, data_frames[key]) for key in order], auto_size_cells)
+        __write_xlsx(
+            file_name, [(key, data_frames[key]) for key in order], auto_size_cells
+        )
     else:
-        __write_xlsx(file_name, [(key, data_frames[key]) for key in data_frames], auto_size_cells)
+        __write_xlsx(
+            file_name, [(key, data_frames[key]) for key in data_frames], auto_size_cells
+        )
 
 
 def write_single_sheet_from_dict(
-    file_name, data, main_key_name=None, sheet=None, order=None, inverse=False, auto_size_cells=True
+    file_name,
+    data,
+    main_key_name=None,
+    sheet=None,
+    order=None,
+    inverse=False,
+    auto_size_cells=True,
 ):
     """
     Save a dictionary (``{main_key_name: {data}}``) as xlsx document to file
@@ -297,11 +321,16 @@ def write_single_sheet_from_dict(
     data_frame = dict_to_pandas_data_frame(data, main_key_name, order, inverse)
 
     write_single_sheet_from_DataFrame(
-        file_name=file_name, data_frame=data_frame, sheet_name=sheet, auto_size_cells=auto_size_cells
+        file_name=file_name,
+        data_frame=data_frame,
+        sheet_name=sheet,
+        auto_size_cells=auto_size_cells,
     )
 
 
-def write_multi_sheet_from_dict_of_dicts(file_name, data, order=None, auto_size_cells=True):
+def write_multi_sheet_from_dict_of_dicts(
+    file_name, data, order=None, auto_size_cells=True
+):
     """
     Save dictionaries (``{sheet_name: {main_key_name: {data}}}``) as xlsx document to file
     Uses the `dict_to_pandas_data_frame <https://datesy.readthedocs.io/en/latest/datesy.html#datesy.convert.dict_to_pandas_data_frame>`_ method of this package for converting the dictionary to pandas.DataFrame.
@@ -324,4 +353,6 @@ def write_multi_sheet_from_dict_of_dicts(file_name, data, order=None, auto_size_
 
     data_frames = {key: dict_to_pandas_data_frame(data[key]) for key in data}
 
-    write_multi_sheet_from_DataFrames(file_name, data_frames, order, auto_size_cells=auto_size_cells)
+    write_multi_sheet_from_DataFrames(
+        file_name, data_frames, order, auto_size_cells=auto_size_cells
+    )

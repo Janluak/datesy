@@ -4,7 +4,12 @@ from collections import OrderedDict
 import re, os, logging
 
 __doc__ = "All actions of mapping data to other data as well as the functions helpful for that are to be found here"
-__all__ = ["simplify_strings", "ease_match_similar", "match_comprehensive", "match_similar_with_manual_selection"]
+__all__ = [
+    "simplify_strings",
+    "ease_match_similar",
+    "match_comprehensive",
+    "match_similar_with_manual_selection",
+]
 
 
 def simplify_strings(to_simplify, lower_case=True, simplifier=True):
@@ -64,16 +69,14 @@ def simplify_strings(to_simplify, lower_case=True, simplifier=True):
             raise ValueError("either simplifier or lower_case must be set")
 
     if not_unique:
-        raise ValueError(f"simplification made the following entries not unique anymore."
-                         f"please provide different simplification method.\n{not_unique}")
+        raise ValueError(
+            f"simplification made the following entries not unique anymore."
+            f"please provide different simplification method.\n{not_unique}"
+        )
     return simplified
 
 
-def match_comprehensive(
-        list_for_matching,
-        list_to_be_matched_to,
-        simplified=False,
-):
+def match_comprehensive(list_for_matching, list_to_be_matched_to, simplified=False):
     """
     Return a dictionary with ``list_for_matching`` as keys and ``list_to_be_matched_to`` as values based on most similarity.
     All values of both iterables get compared to each other and highest similarities are picked.
@@ -98,21 +101,18 @@ def match_comprehensive(
 
     """
     match, no_match = __match_handler(
-        list_for_matching,
-        list_to_be_matched_to,
-        simplified,
-        "comprehensive"
+        list_for_matching, list_to_be_matched_to, simplified, "comprehensive"
     )
     return match, no_match
 
 
 def match_similar_with_manual_selection(
-        list_for_matching,
-        list_to_be_matched_to,
-        simplified=False,
-        minimal_distance_for_automatic_matching=0.1,
-        print_auto_matched=False,
-        similarity_limit_for_manual_checking=0.6,
+    list_for_matching,
+    list_to_be_matched_to,
+    simplified=False,
+    minimal_distance_for_automatic_matching=0.1,
+    print_auto_matched=False,
+    similarity_limit_for_manual_checking=0.6,
 ):
     """
     Return a dictionary with ``list_for_matching`` as keys and ``list_to_be_matched_to`` as values based on most similarity.
@@ -151,17 +151,17 @@ def match_similar_with_manual_selection(
         "manual_selection",
         minimal_distance_for_automatic_matching=minimal_distance_for_automatic_matching,
         print_auto_matched=print_auto_matched,
-        similarity_limit_for_manual_checking=similarity_limit_for_manual_checking
+        similarity_limit_for_manual_checking=similarity_limit_for_manual_checking,
     )
     return match, no_match
 
 
 def ease_match_similar(
-        list_for_matching,
-        list_to_be_matched_to,
-        simplified=False,
-        similarity_limit_for_matching=0.6,
-        print_auto_matched=False,
+    list_for_matching,
+    list_to_be_matched_to,
+    simplified=False,
+    similarity_limit_for_matching=0.6,
+    print_auto_matched=False,
 ):
     """
     Return a dictionary with ``list_for_matching`` as keys and ``list_to_be_matched_to`` as values based on most similarity.
@@ -197,7 +197,7 @@ def ease_match_similar(
         simplified,
         "ease",
         similarity_limit_for_manual_checking=similarity_limit_for_matching,
-        print_auto_matched=print_auto_matched
+        print_auto_matched=print_auto_matched,
     )
     return match, no_match
 
@@ -265,7 +265,9 @@ def _find_direct_matches(list_for_matching, list_to_be_matched_to):
     return matches
 
 
-def _calculate_similarities_listed_by_list_for_matching_entry(list_for_matching, list_to_be_matched_to):
+def _calculate_similarities_listed_by_list_for_matching_entry(
+    list_for_matching, list_to_be_matched_to
+):
     """
     Calculate the similarities between the iterable entries; return based on the entries of the `list_for_matching`
 
@@ -297,16 +299,22 @@ def _calculate_similarities_listed_by_list_for_matching_entry(list_for_matching,
                 all_similarities_per_entry_a[entry_a][similarity] = list()
             all_similarities_per_entry_a[entry_a][similarity].append(entry_b)
 
-        ordered_similarities = sorted(all_similarities_per_entry_a[entry_a].keys(), reverse=True)
+        ordered_similarities = sorted(
+            all_similarities_per_entry_a[entry_a].keys(), reverse=True
+        )
 
         ordered_similarity_per_entry_a[entry_a] = OrderedDict()
         for similarity in ordered_similarities:
-            ordered_similarity_per_entry_a[entry_a][similarity] = all_similarities_per_entry_a[entry_a][similarity]
+            ordered_similarity_per_entry_a[entry_a][
+                similarity
+            ] = all_similarities_per_entry_a[entry_a][similarity]
 
     return ordered_similarity_per_entry_a
 
 
-def _calculate_similarities_listed_by_similarity(list_for_matching, list_to_be_matched_to):
+def _calculate_similarities_listed_by_similarity(
+    list_for_matching, list_to_be_matched_to
+):
     """
     Calculate the similarities between the iterable entries; return based on the highest similarity values
 
@@ -336,8 +344,12 @@ def _calculate_similarities_listed_by_similarity(list_for_matching, list_to_be_m
                 all_similarities_per_similarity_value[similarity] = list()
             all_similarities_per_similarity_value[similarity].append((entry_a, entry_b))
 
-    for similarity in sorted(all_similarities_per_similarity_value.keys(), reverse=True):
-        ordered_similarities_per_value[similarity] = all_similarities_per_similarity_value[similarity]
+    for similarity in sorted(
+        all_similarities_per_similarity_value.keys(), reverse=True
+    ):
+        ordered_similarities_per_value[
+            similarity
+        ] = all_similarities_per_similarity_value[similarity]
 
     return ordered_similarities_per_value
 
@@ -348,29 +360,26 @@ def _create_similarity_dataframe(similarities):
     for similarity in similarities:
         for match_set in similarities[similarity]:
             rows.append([similarity, match_set[0], match_set[1]])
-    data_frame = DataFrame(
-        rows,
-        columns=["similarity", "entry_a", "entry_b"],
-    )
+    data_frame = DataFrame(rows, columns=["similarity", "entry_a", "entry_b"])
     return data_frame
 
 
 def __match_handler(
-        list_for_matching,
-        list_to_be_matched_to,
-        simplified,
-        variant,
-        minimal_distance_for_automatic_matching=None,
-        print_auto_matched=None,
-        similarity_limit_for_manual_checking=None
-
+    list_for_matching,
+    list_to_be_matched_to,
+    simplified,
+    variant,
+    minimal_distance_for_automatic_matching=None,
+    print_auto_matched=None,
+    similarity_limit_for_manual_checking=None,
 ):
     # Checking if entries for each data_set are unique
     for data_set in [list_for_matching, list_to_be_matched_to]:
         _check_uniqueness_of_entries(
-            data_set, 'list_for_matching'
+            data_set,
+            "list_for_matching"
             if data_set == list_for_matching
-            else 'list_to_be_matched_to'
+            else "list_to_be_matched_to",
         )
 
     if simplified:
@@ -390,14 +399,20 @@ def __match_handler(
         list_for_matching = list(dict_for_matching.keys())
         _check_uniqueness_of_entries(list_for_matching, "list_for_matching-simplified")
 
-        dict_to_be_matched_to = simplify_strings(list_to_be_matched_to, True, simplified)
+        dict_to_be_matched_to = simplify_strings(
+            list_to_be_matched_to, True, simplified
+        )
         list_to_be_matched_to = list(dict_to_be_matched_to.keys())
-        _check_uniqueness_of_entries(list_to_be_matched_to, "list_to_be_matched_to-simplified")
+        _check_uniqueness_of_entries(
+            list_to_be_matched_to, "list_to_be_matched_to-simplified"
+        )
 
     match = _find_direct_matches(list_for_matching, list_to_be_matched_to)
 
     if variant == "comprehensive":
-        match, no_match = __match_comprehensive(list_for_matching, list_to_be_matched_to, match)
+        match, no_match = __match_comprehensive(
+            list_for_matching, list_to_be_matched_to, match
+        )
     elif variant == "manual_selection":
         match, no_match = __match_similar_with_manual_selection(
             list_for_matching,
@@ -415,23 +430,24 @@ def __match_handler(
             minimal_distance_for_automatic_matching=0,
             print_auto_matched=print_auto_matched,
             similarity_limit_for_manual_checking=similarity_limit_for_manual_checking,
-            no_manual=True
+            no_manual=True,
         )
 
     if simplified:
-        match = {dict_for_matching[key]: dict_to_be_matched_to[value] for key, value in match.items()}
+        match = {
+            dict_for_matching[key]: dict_to_be_matched_to[value]
+            for key, value in match.items()
+        }
         no_match = {dict_for_matching[key] for key in no_match}
 
     return match, no_match
 
 
-def __match_comprehensive(
-        list_for_matching,
-        list_to_be_matched_to,
-        match
-):
+def __match_comprehensive(list_for_matching, list_to_be_matched_to, match):
 
-    similarities = _calculate_similarities_listed_by_similarity(list_for_matching, list_to_be_matched_to)
+    similarities = _calculate_similarities_listed_by_similarity(
+        list_for_matching, list_to_be_matched_to
+    )
 
     df = _create_similarity_dataframe(similarities)
 
@@ -441,9 +457,9 @@ def __match_comprehensive(
         old_length = len(df.similarity)
         highest_similarity = df.similarity[0]
         if (
-                len(df.similarity) > 1
-                and highest_similarity != df.similarity[1]
-                or len(df.similarity) == 0
+            len(df.similarity) > 1
+            and highest_similarity != df.similarity[1]
+            or len(df.similarity) == 0
         ):
             entry_a = df.entry_a[0]
             entry_b = df.entry_b[0]
@@ -522,13 +538,13 @@ def __match_comprehensive(
 
 
 def __match_similar_with_manual_selection(
-        list_for_matching,
-        list_to_be_matched_to,
-        match,
-        minimal_distance_for_automatic_matching=0.1,
-        print_auto_matched=False,
-        similarity_limit_for_manual_checking=0.6,
-        no_manual=False
+    list_for_matching,
+    list_to_be_matched_to,
+    match,
+    minimal_distance_for_automatic_matching=0.1,
+    print_auto_matched=False,
+    similarity_limit_for_manual_checking=0.6,
+    no_manual=False,
 ):
     def get_screen_width():
         try:
@@ -540,12 +556,7 @@ def __match_similar_with_manual_selection(
 
     def calculate_longest_string():
         longest_string_length = len(
-            str(
-                max(
-                    [element[1] for element in decreasing_matches],
-                    key=len,
-                )
-            )
+            str(max([element[1] for element in decreasing_matches], key=len))
         )
         return longest_string_length
 
@@ -591,10 +602,7 @@ def __match_similar_with_manual_selection(
         # print entry_a row
         print(
             "".join(
-                [
-                    " {:>{}} |".format(entry_a, characters)
-                    for i in range(number_to_show)
-                ]
+                [" {:>{}} |".format(entry_a, characters) for i in range(number_to_show)]
             )
         )
 
@@ -602,10 +610,7 @@ def __match_similar_with_manual_selection(
         print(
             "".join(
                 [
-                    " {:>{}} |".format(
-                        decreasing_matches[n][1],
-                        characters,
-                    )
+                    " {:>{}} |".format(decreasing_matches[n][1], characters)
                     for n in range(number_to_show)
                 ]
             )
@@ -617,17 +622,9 @@ def __match_similar_with_manual_selection(
                 print(
                     "{}: {:2.1f}% | {} - {}: fit? ".format(
                         n + number_to_show,
-                        round(
-                            decreasing_matches[
-                                n + number_to_show
-                                ][0],
-                            3,
-                        ) * 100,
+                        round(decreasing_matches[n + number_to_show][0], 3) * 100,
                         entry_a,
-                        decreasing_matches[
-                            n + number_to_show
-                            ][1]
-
+                        decreasing_matches[n + number_to_show][1],
                     )
                 )
                 for n in range(len(decreasing_matches))
@@ -636,9 +633,7 @@ def __match_similar_with_manual_selection(
             for _ in generator:
                 result = input("match? ")
                 if result == "":
-                    match[entry_a] = decreasing_matches[
-                        number_to_show
-                    ][1]
+                    match[entry_a] = decreasing_matches[number_to_show][1]
                     break
                 elif result == "break":
                     break
@@ -646,7 +641,9 @@ def __match_similar_with_manual_selection(
             pass
 
     no_match = set()
-    similarities = _calculate_similarities_listed_by_list_for_matching_entry(list_for_matching, list_to_be_matched_to)
+    similarities = _calculate_similarities_listed_by_list_for_matching_entry(
+        list_for_matching, list_to_be_matched_to
+    )
 
     if not no_manual:
         print(
@@ -659,8 +656,11 @@ def __match_similar_with_manual_selection(
         similarities_of_entry_a = list(similarities[entry_a].keys())
         if len(similarities_of_entry_a) == 1:
             similarities_of_entry_a.insert(0, 1)
-        if not (similarities_of_entry_a[0] - similarities_of_entry_a[1]) > minimal_distance_for_automatic_matching or \
-                len(similarities[entry_a][similarities_of_entry_a[0]]) != 1:
+        if (
+            not (similarities_of_entry_a[0] - similarities_of_entry_a[1])
+            > minimal_distance_for_automatic_matching
+            or len(similarities[entry_a][similarities_of_entry_a[0]]) != 1
+        ):
 
             decreasing_matches = list()
             for similarity in similarities[entry_a]:
@@ -697,9 +697,7 @@ def __match_similar_with_manual_selection(
 
         matched_entry = similarities[entry_a][similarities_of_entry_a[0]].pop()
         if print_auto_matched:
-            print(
-                f"automatically matched: {entry_a} - {matched_entry}"
-            )
+            print(f"automatically matched: {entry_a} - {matched_entry}")
         match[entry_a] = matched_entry
 
         if entry_a not in match:
