@@ -21,7 +21,7 @@ setup(
     author=author,
     author_email=author_email,
     license=packet_license,
-    packages=["datesy", "datesy/file_IO"],
+    packages=["datesy", "datesy/file_IO", "datesy/database_IO"],
     python_requires=">=3.6",
     zip_safe=False,
     classifiers=[
@@ -32,5 +32,5 @@ setup(
         "Programming Language :: Python :: 3.6",
     ],
     # https://pypi.org/pypi?%3Aaction=list_classifiers
-    install_requires=["pandas", "xmltodict", "openpyxl", "xlrd"],
+    install_requires=["pandas", "xmltodict", "openpyxl", "xlrd", "mysql-connector-python"],
 )

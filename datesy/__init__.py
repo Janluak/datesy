@@ -6,6 +6,7 @@ from .convert import *
 from .inspect import *
 from .matching import *
 from .file_IO import *
+from . import database_IO
 
 # shortcuts
 load_json = json_file.load

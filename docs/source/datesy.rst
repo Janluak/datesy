@@ -1,12 +1,13 @@
 The datesy package
 ==================
 
-The `datesy` package is divided in 4 main components:
+The `datesy` package is divided in 5 main components:
 
 1. `file I/O (subpackage) <https://datesy.readthedocs.io/en/latest/datesy.file_IO.html>`_
-2. `data converting <https://datesy.readthedocs.io/en/latest/datesy.html#module-datesy.convert>`_
-3. `data inspecting <https://datesy.readthedocs.io/en/latest/datesy.html#module-datesy.inspect>`_
-4. `matching data sets <https://datesy.readthedocs.io/en/latest/datesy.html#module-datesy.matching>`_
+2. `dabase I/O (subpackage) <https://datesy.readthedocs.io/en/latest/datesy.database_IO.html>`_
+3. `data converting <https://datesy.readthedocs.io/en/latest/datesy.html#module-datesy.convert>`_
+4. `data inspecting <https://datesy.readthedocs.io/en/latest/datesy.html#module-datesy.inspect>`_
+5. `matching data sets <https://datesy.readthedocs.io/en/latest/datesy.html#module-datesy.matching>`_
 
 
 Subpackages
@@ -17,6 +18,13 @@ All actions of interacting with files are to be found here:
 .. toctree::
 
  datesy.file_IO
+
+
+All actions of interacting with databases are to be found here:
+
+.. toctree::
+
+ datesy.database_IO
 
 Submodules
 ----------
