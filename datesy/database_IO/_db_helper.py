@@ -53,7 +53,7 @@ class Database:
         atexit.register(self.close)
 
     def __enter__(self):
-        atexit.unregister(self.close)   # due to context manager no need for atexit
+        atexit.unregister(self.close)  # due to context manager no need for atexit
         return self
 
     @property
@@ -187,6 +187,19 @@ class Table:
         return self.__query
 
     def run_query(self, debug=False):
+        """
+        Run the currently composed query
+        Parameters
+        ----------
+        debug : bool, optional
+            if the query shall be printed to command_line
+
+        Returns
+        -------
+        list
+            data from database
+
+        """
         query = str(self.query)
         if debug or self._debug_query:
             print(query)
@@ -312,9 +325,9 @@ class Table:
 
     def __getitem__(self, key):
         """
-        Get rows where key matches the primary column
+        Get row of primary key
 
-        works like ``database.table[key]``
+        works like ``value = database.table[key]``
 
         Parameters
         ----------
@@ -323,7 +336,7 @@ class Table:
 
         Returns
         -------
-        list
+        Row
             tuple items representing every matched row in database
 
         """
@@ -351,7 +364,7 @@ class Table:
 
         Returns
         -------
-        list
+        list(Row)
             tuple items representing every matched row in database
 
         """
@@ -386,16 +399,16 @@ class Table:
 
     def __setitem__(self, primary_key, row):
         """
+        Set/update a single row for primary key
+
+        works like ``database.table[key] = row``
 
         Parameters
         ----------
-        primary_key : str, None
-            the key of the primary column. If None -> new row inserted
+        primary_key : any, None
+            the value of the primary column. If None -> new row inserted
         row : list, dict
             the row data in either correct order or in a dict with column_name
-
-        Returns
-        -------
 
         """
         if not self.primary:
@@ -420,18 +433,35 @@ class Table:
 
     def update_where(
         self,
-        row: (list, dict),
+        values: (list, dict),
         *args,
         primary_key=None,
         limit_rows: int = False,
         **kwargs,
     ):
+        """
+        Update all rows based on given conditions
+
+        Parameters
+        ----------
+        values : list, dict
+            new values to set. either as a full row in a list or specified columns with dictionary
+        args
+            conditions
+        primary_key : any, optional
+            the value of the primary column (if table has primary_key)
+        limit_rows : int
+            number of rows to affect
+        kwargs
+            conditions
+
+        """
         if primary_key:
             kwargs[self.primary] = primary_key
 
-        row = self._parse_input_row_data(row)
+        values = self._parse_input_row_data(values)
 
-        self.query.add_new_values(**row)
+        self.query.add_new_values(**values)
 
         self.query.add_where_statements(*args, **kwargs)
         if limit_rows:
@@ -440,12 +470,34 @@ class Table:
         self.run_query()
 
     def insert(self, row: (list, dict), primary_key=None):
+        """
+        Insert new row
+
+        Parameters
+        ----------
+        row : list, dict
+            row_data
+        primary_key : any, optional
+            primary_key optional for tables with primary_key
+
+        """
         row = self._parse_input_row_data(row, primary_key)
 
         self.query.add_new_values(**row)
         self.run_query()
 
     def __delitem__(self, key):
+        """
+        Delete single row for given primary key
+
+        works like ``del database.table[key]``
+
+        Parameters
+        ----------
+        key : any
+            matching value in primary column
+
+        """
         if not self.primary:
             raise AttributeError(
                 "table has no primary_key column. operation not permitted"
@@ -455,28 +507,37 @@ class Table:
         self.delete_where(**{self.primary: key})
 
     def delete_where(self, *args, **kwargs):
+        """
+        Delete rows matching the where conditions
+
+        Parameters
+        ----------
+        args : conditions
+        kwargs : conditions
+
+        """
         if not args and not kwargs:
             raise OverflowError("Please use truncate to delete the hole table")
         self.query.delete_request()
         self.query.add_where_statements(*args, **kwargs)
         self.run_query()
 
-    def as_dict(self):
-        if not self.primary:
-            raise AttributeError(
-                "table has no primary_key column. operation not permitted"
-            )
-
-        # ToDo download all data and return as dict
-        raise NotImplemented("coming soon")
-
-    def as_rows(self):
-        # ToDo download all data and return as rows
-        raise NotImplemented("coming soon")
-
-    def as_df(self):
-        # ToDo download all data and return as pandas.dataframe
-        raise NotImplemented("coming soon")
+    # def as_dict(self):
+    #     if not self.primary:
+    #         raise AttributeError(
+    #             "table has no primary_key column. operation not permitted"
+    #         )
+    #
+    #     # ToDo download all data and return as dict
+    #     raise NotImplemented("coming soon")
+    #
+    # def as_rows(self):
+    #     # ToDo download all data and return as rows
+    #     raise NotImplemented("coming soon")
+    #
+    # def as_df(self):
+    #     # ToDo download all data and return as pandas.dataframe
+    #     raise NotImplemented("coming soon")
 
     def truncate(self):
         self.execute_raw_sql(f"TRUNCATE TABLE {self.name}")
@@ -540,6 +601,15 @@ class Row:
             self.__table.query.limit(1)
 
     def sync(self, *missing_columns):
+        """
+        Update row from database to local
+
+        Parameters
+        ----------
+        missing_columns : str, optional
+            if rows shall be left out when updating (e.g. if known that a timestamp has changed and it shall be fetched)
+
+        """
         self._where_reference_to_row(*missing_columns)
         if not self.__table.primary:
             self.__table.query.limit(1)
@@ -548,15 +618,43 @@ class Row:
         except IndexError:
             raise LookupError("The query did not work, no result from database")
 
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            key = list(self.__columns)[key]
-        elif not isinstance(key, str):
+    def __getitem__(self, column):
+        """
+        Get column_value of row
+        
+        works like ``value = database.table.row[column]``
+        
+        Parameters
+        ----------
+        column : int, str
+            position in table or column_name
+
+        Returns
+        -------
+        Item
+
+        """
+        if isinstance(column, int):
+            column = list(self.__columns)[column]
+        elif not isinstance(column, str):
             raise TypeError("only int for position or str for column name allowed")
 
-        return Item(self, key, self.__table, self.__content[key])
+        return Item(self, column, self.__table, self.__content[column])
 
     def __setitem__(self, column, value):
+        """
+        Set new value to column
+
+        works like ``database.table.row[column] = value``
+
+        Parameters
+        ----------
+        column : int, str
+            position in table or column_name
+        value : any
+            new value
+
+        """
         if isinstance(column, int):
             column = list(self.__columns)[column]
         elif not isinstance(column, str):
@@ -578,6 +676,17 @@ class Row:
         self.sync(column)
 
     def __delitem__(self, column):
+        """
+        Delete/reset to default a column
+
+        works like ``del database.table.row[column]``
+
+        Parameters
+        ----------
+        column : int, str
+            position in table or column_name
+
+        """
 
         if isinstance(column, int):
             column = list(self.__columns)[column]
@@ -631,21 +740,55 @@ class Item(object):
 
     @property
     def value(self):
+        """
+        Value of this item
+
+        Returns
+        -------
+        value : any
+        """
         return self.__value
 
     @property
     def column(self):
+        """
+        Column this item belonging to
+
+        Returns
+        -------
+        column : str
+
+        """
         return self.__column
 
     @property
     def table(self):
+        """
+        Table this item is belonging to
+
+        Returns
+        -------
+        table :  Table
+
+        """
         return self.__table
 
     @property
     def database(self):
+        """
+        Database this item is belonging to
+
+        Returns
+        -------
+        database : Database
+        """
         return self.__table.database
 
     def sync(self):
+        """
+        Update entry from database to local
+
+        """
         self.table.query.add_desired_columns(self.column)
         self.__row._where_reference_to_row()
         try:
@@ -656,6 +799,16 @@ class Item(object):
             raise LookupError("The query did not work, no result from database")
 
     def __set__(self, instance, value):
+        """
+        Set new value
+
+        Parameters
+        ----------
+        instance
+        value : any
+            new value
+
+        """
         if not isinstance(
             value, (self.__python_type, type(None)) + self._switchable_types
         ):
@@ -668,6 +821,10 @@ class Item(object):
         self.sync()
 
     def __delete__(self, instance):
+        """
+        Delete/reset to default this value
+
+        """
 
         self.__set__(self, self.table.schema[self.column]["default"])
 

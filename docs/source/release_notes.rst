@@ -1,6 +1,26 @@
 Release Notes
 =============
 
+0.8.0
+*****
+
+database connection: connect to a database and interact with it in a pythonic way
+
+Features
+~~~~~~~~
+
+* database abstraction available
+
+    * database
+    * table
+    * row
+    * item
+
+* database interaction now possible for:
+
+    * mysql
+
+
 0.7.1
 *****
 

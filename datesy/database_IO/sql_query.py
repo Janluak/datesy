@@ -1,15 +1,11 @@
 _dual_value_commands = ["between", "not between"]
 _string_commands = ["contains", "not contains", "not like", "like"]
 _allowed_sql_query_commands = (
-        ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not", "in", "not in"]
-        + _dual_value_commands
-        + _string_commands
+    ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not", "in", "not in"]
+    + _dual_value_commands
+    + _string_commands
 )
-_command_translations = {
-    "contains": "like",
-    "not contains": "not like",
-    "!=": "<>"
-}
+_command_translations = {"contains": "like", "not contains": "not like", "!=": "<>"}
 
 
 class SQLQueryConstructor:
@@ -39,8 +35,11 @@ class SQLQueryConstructor:
 
         self._affected_rows = int()  # limit of rows
         self._offset_affected_rows = int()
-        self._order_by = {
-            self.__create_escaped_references(primary, column=True): "ASC"} if primary else dict()  # columns to order by
+        self._order_by = (
+            {self.__create_escaped_references(primary, column=True): "ASC"}
+            if primary
+            else dict()
+        )  # columns to order by
 
     @property
     def columns(self):
@@ -52,7 +51,9 @@ class SQLQueryConstructor:
         elif isinstance(name, (list, tuple)):
             parts = name
         else:
-            raise TypeError("name must be either str of column or table or a list with all specified values")
+            raise TypeError(
+                "name must be either str of column or table or a list with all specified values"
+            )
 
         length = len(parts)
         if table:
@@ -93,7 +94,9 @@ class SQLQueryConstructor:
     # ### give data for query ###
     def add_desired_columns(self, *args):
         for column in args:
-            self._affected_columns.append(self.__create_escaped_references(column, column=True))
+            self._affected_columns.append(
+                self.__create_escaped_references(column, column=True)
+            )
         return self
 
     def add_desired_foreign_columns(self, *args, table, database=None):
@@ -114,12 +117,14 @@ class SQLQueryConstructor:
             database = self._database_name
 
         for column in args:
-            reference = self.__create_escaped_references((database, table, column), column=True)
+            reference = self.__create_escaped_references(
+                (database, table, column), column=True
+            )
             self._affected_columns.append(reference)
         return self
 
     def add_where_statements(
-            self, *args, column=None, command=None, value=None, OR=False, **kwargs
+        self, *args, column=None, command=None, value=None, OR=False, **kwargs
     ):
         wheres = list()
         for key in kwargs:
@@ -154,7 +159,9 @@ class SQLQueryConstructor:
                 )
 
             # set column reference with escape chars
-            statement = [self.__create_escaped_references(statement[0], column=True)] + statement[1:]
+            statement = [
+                self.__create_escaped_references(statement[0], column=True)
+            ] + statement[1:]
 
             # handling special commands
             if statement[1].lower() in _dual_value_commands:
@@ -189,9 +196,7 @@ class SQLQueryConstructor:
                 self._wheres.append(where)
         return self
 
-    def add_join(
-            self, column_1, column_2, join_type="INNER"
-    ):
+    def add_join(self, column_1, column_2, join_type="INNER"):
         """
         Add join of two tables
 
@@ -209,7 +214,9 @@ class SQLQueryConstructor:
             raise ValueError(f"unsupported join type {join_type}")
 
         if not all(isinstance(i, (str, list, tuple)) for i in [column_1, column_2]):
-            raise TypeError(f"column_1 and column_2 must be both either string or iterable")
+            raise TypeError(
+                f"column_1 and column_2 must be both either string or iterable"
+            )
 
         column_1 = self.__create_escaped_references(column_1, column=True)
         column_2 = self.__create_escaped_references(column_2, column=True)
@@ -236,7 +243,7 @@ class SQLQueryConstructor:
         return self
 
     def add_new_values(
-            self, column=None, value=None, **kwargs
+        self, column=None, value=None, **kwargs
     ):  # column=value for each entry to set
         """
         Updates/inserts rows
@@ -253,17 +260,23 @@ class SQLQueryConstructor:
 
         """
         if column:
-            self._updates[self.__create_escaped_references(column, column=True)] = value \
-                if not isinstance(value, bool) else {True: 1, False: 0}[value]
+            self._updates[self.__create_escaped_references(column, column=True)] = (
+                value if not isinstance(value, bool) else {True: 1, False: 0}[value]
+            )
         for key in kwargs.copy():
-            kwargs[self.__create_escaped_references(key, column=True)] = kwargs[key] \
-                if not isinstance(kwargs[key], bool) else {True: 1, False: 0}[value]
+            kwargs[self.__create_escaped_references(key, column=True)] = (
+                kwargs[key]
+                if not isinstance(kwargs[key], bool)
+                else {True: 1, False: 0}[value]
+            )
             del kwargs[key]
         self._updates.update(kwargs)
         return self
 
     # ### organize operation ###
-    def order(self, column, increasing=True, foreign_table=False, foreign_database=False):
+    def order(
+        self, column, increasing=True, foreign_table=False, foreign_database=False
+    ):
         """
         Order the result by column (and increasing or decreasing values)
 
@@ -280,7 +293,9 @@ class SQLQueryConstructor:
         if not isinstance(column, str):
             raise TypeError(f"column to order by must be string, given: {type(column)}")
         if foreign_database and not foreign_table:
-            raise ValueError("if foreign database is given, the foreign table needs to be specified as well")
+            raise ValueError(
+                "if foreign database is given, the foreign table needs to be specified as well"
+            )
 
         reference = [column]
 
@@ -295,7 +310,9 @@ class SQLQueryConstructor:
         else:
             self._order_by[reference] = "DESC"
         if self._primary and self._primary in self._order_by:
-            del self._order_by[self.__create_escaped_references(self._primary, column=True)]
+            del self._order_by[
+                self.__create_escaped_references(self._primary, column=True)
+            ]
         return self
 
     def limit(self, number_of_rows, offset=int()):
@@ -361,10 +378,10 @@ class SQLQueryConstructor:
             query += " WHERE " + " AND ".join(self._wheres)
 
         if (
-                self._order_by
-                and not self._updates
-                and not self._delete
-                and not self._length
+            self._order_by
+            and not self._updates
+            and not self._delete
+            and not self._length
         ):
             if self._affected_columns:
                 for column in self._order_by.copy():
