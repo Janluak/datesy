@@ -485,7 +485,7 @@ class Row:
     """
 
     def __init__(self, table, data):
-        self.__table = table
+        self.__table: Table = table
         self.__schema = table.schema
         self.__columns = table.schema.keys()
 
@@ -608,9 +608,9 @@ class Item(object):
             self.__value = literal_eval(value)
         except ValueError:
             self.__value = value
-        self.__row = row
+        self.__row: Row = row
         self.__column = column
-        self.__table = table
+        self.__table: Table = table
         self.__real_type = table.schema[column]["type"]
         self.__python_type = type(self.__value)
         self._switchable_types = tuple()
