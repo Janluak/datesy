@@ -465,7 +465,8 @@ class Table:
         # ToDo download all data and return as pandas.dataframe
         raise NotImplemented("coming soon")
 
-    # ToDo implement TRUNCATE
+    def truncate(self):
+        self.execute_raw_sql(f"TRUNCATE TABLE {self.name}")
 
     # ToDo implement min/max
 
