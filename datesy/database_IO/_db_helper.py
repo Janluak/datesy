@@ -342,7 +342,7 @@ class Table:
             tuple items representing every matched row in database
 
         """
-        self.query.add_where_statements(args, **kwargs)
+        self.query.add_where_statements(*args, **kwargs)
         rows = [Row(self, row) for row in self.run_query()]
         return rows
 
@@ -356,7 +356,7 @@ class Table:
 
         elif isinstance(row, list):
             if primary_key:
-                row.insert(self.schema[self.primary], primary_key)
+                row.insert(list(self.schema).index(self.primary), primary_key)
             if len(row) != len(self.schema):
                 raise ValueError(
                     f"length of given row (given {len(row)} must be same length of table "
