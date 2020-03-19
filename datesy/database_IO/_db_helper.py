@@ -1,5 +1,5 @@
 from collections import OrderedDict
-import logging, re, inspect
+import logging
 import atexit
 from ast import literal_eval
 from .sql_query import SQLQueryConstructor
