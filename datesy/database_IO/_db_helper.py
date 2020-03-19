@@ -52,6 +52,10 @@ class Database:
             self._construct_all_tables()
         atexit.register(self.close)
 
+    def __enter__(self):
+        atexit.unregister(self.close)   # due to context manager no need for atexit
+        return self
+
     @property
     def name(self):
         """
@@ -139,10 +143,15 @@ class Database:
 
         """
         # ToDo catch exception for unread cursor
+        self.__exit__(None, None, None)
+        atexit.unregister(self.close)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self._cursor.close()
         self._conn.close()
-        atexit.unregister(self.close)
         logging.info("closed connection to database")
+        if exc_type:
+            raise exc_type(exc_val)
 
 
 class Table:
