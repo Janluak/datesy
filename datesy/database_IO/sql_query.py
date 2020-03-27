@@ -128,6 +128,8 @@ class SQLQueryConstructor:
     ):
         wheres = list()
         for key in kwargs:
+            if isinstance(kwargs[key], str):
+                kwargs[key] = f"'{kwargs[key]}'"
             statement = f"({self.__create_escaped_references(key, column=True)} = {kwargs[key]})"
             wheres.append(statement)
 
