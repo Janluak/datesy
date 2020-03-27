@@ -1,6 +1,15 @@
 Release Notes
 =============
 
+0.8.1
+*****
+
+Bug Fixes
+~~~~~~~~~
+
+* sql_query: possible to use strings as values when using ``…where(column=value)``
+
+
 
 0.8.0
 *****

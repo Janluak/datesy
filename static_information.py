@@ -1,6 +1,6 @@
 # static information that is relevant for packet management and documentation
 project_name = "datesy"
-version = "0.8.0"
+version = "0.8.1"
 url = "https://github.com/janluak/datesy"
 author = "Jan Lukas Braje"
 author_email = "datesy@braje.org"

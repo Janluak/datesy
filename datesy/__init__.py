@@ -1,6 +1,6 @@
 __author__ = "Jan Lukas Braje"
 __copyright__ = "Copyright (C) 2019 Jan Lukas Braje"
-__versions__ = "0.8.0"  # versioneer
+__versions__ = "0.8.1"  # versioneer
 
 from .convert import *
 from .inspect import *
