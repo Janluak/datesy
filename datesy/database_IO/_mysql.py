@@ -8,7 +8,7 @@ __all__ = ["MySQL"]
 
 
 class MySQL(Database):
-    def __init__(self, host, user, password, database, port=3306, auto_creation=False):
+    def __init__(self, host, user, password, database, port=3306, auto_creation=False) -> Database:
         # MySQL specifics
         self._table_update_query = f"SHOW tables"
 
