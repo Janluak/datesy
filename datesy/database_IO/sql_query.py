@@ -1,9 +1,11 @@
 _dual_value_commands = ["between", "not between"]
 _string_commands = ["contains", "not contains", "not like", "like"]
+_iterate_commands = ["in", "not in"]
 _allowed_sql_query_commands = (
-    ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not", "in", "not in"]
+    ["not", "<>", "!=", "=", "<", ">", ">=", "<=", "is", "is not"]
     + _dual_value_commands
     + _string_commands
+    + _iterate_commands
 )
 _command_translations = {"contains": "like", "not contains": "not like", "!=": "<>"}
 
@@ -170,6 +172,8 @@ class SQLQueryConstructor:
                 statement[2] = f"{statement[2][0]} AND {statement[2][1]}"
             if statement[1].lower() in _string_commands:
                 statement[2] = f"'%{statement[2]}%'"
+            if statement[1].lower() in _iterate_commands:
+                statement[2] = f"({statement[2]})"
 
             # translating commands
             if statement[1] in _command_translations:
