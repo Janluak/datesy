@@ -16,10 +16,15 @@ For further guidance and help look at the documentation:
 Please find the documentation here: [documentation](https://datesy.readthedocs.io/en/latest/)
 
 ## Release Notes
-Please find all but the latest few release notes here: [release notes](https://datesy.readthedocs.io/en/latest/release_notes.html)
+Please find all release notes here: [release notes](https://datesy.readthedocs.io/en/latest/release_notes.html)
+
+### 0.8.0
+* Database abstraction and I/O for mysql included 
 
 ### 0.7.0
-* initial commit
+* reading file types like csv, json, xml & xls
+* converting data types like lists, dicts, DataFrames
+* string insights: matching algorithms 
 
 
 ## Requests & contribution
