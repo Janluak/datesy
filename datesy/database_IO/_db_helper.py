@@ -3,11 +3,13 @@ import logging
 import atexit
 from ast import literal_eval
 from .sql_query import SQLQueryConstructor
+from abc import ABC, abstractmethod
+
 
 __all__ = ["Database", "Table"]
 
 
-class Database:
+class Database(ABC):
     """
     Representing a database as an object
 
@@ -32,7 +34,7 @@ class Database:
         specific information to database, see details to each database
 
     """
-
+    @abstractmethod
     def __init__(self, host, port, user, password, database, auto_creation=False):
         import warnings
 
@@ -55,6 +57,10 @@ class Database:
     def __enter__(self):
         atexit.unregister(self.close)  # due to context manager no need for atexit
         return self
+
+    @abstractmethod
+    def _connect_to_db(self):
+        pass
 
     @property
     def name(self):
@@ -98,6 +104,7 @@ class Database:
         self.__tables = list()
         return self.tables
 
+    @abstractmethod
     def table(self, table_name):
         """
         Return a database_table as an object
@@ -132,6 +139,7 @@ class Database:
                 f"please disable auto_creation or rename '{hidden_values}' in database"
             )
 
+    @abstractmethod
     def _construct_all_tables(self):
         self._check_auto_creation()
         for table_name in self.tables:
@@ -154,7 +162,7 @@ class Database:
             raise exc_type(exc_val)
 
 
-class Table:
+class Table(ABC):
     """
     Create a representation of a database table
 
@@ -165,6 +173,7 @@ class Table:
 
     """
 
+    @abstractmethod
     def __init__(self, table_name, database):
         self.__table_name = table_name
         self.__db = database
@@ -729,6 +738,8 @@ class Item(object):
     def __init__(self, row, column, table, value=None):
         try:
             self.__value = literal_eval(value)
+            if isinstance(self.__value, tuple) and "(" not in value:
+                self.__value = value
         except ValueError:
             self.__value = value
         self.__row: Row = row
@@ -828,8 +839,11 @@ class Item(object):
 
         self.__set__(self, self.table.schema[self.column]["default"])
 
-    def __repr__(self):
-        return repr(self.__value)
+    # def __repr__(self):
+    #     return repr(self.__value)
+
+    def __bool__(self):
+        return bool(self.__value)
 
     def __int__(self):
         return int(self.__value)
@@ -847,7 +861,7 @@ class Item(object):
         return len(self.__value)
 
     def __getitem__(self, item):
-        if isinstance(self.__value, dict):
+        try:
             return self.__value[item]
-        else:
+        except TypeError:
             raise TypeError("'Item' object is not subscribable")
