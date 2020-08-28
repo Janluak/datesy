@@ -167,11 +167,12 @@ def dict_to_pandas_data_frame(data, main_key_name=None, order=None, inverse=Fals
     if not isinstance(inverse, bool):
         raise TypeError
 
-    from ._helper import _create_sorted_list_from_order, _cast_main_key_name
+    from .sort import create_sorted_list_from_order
+    from .inspect import cast_main_key
     from pandas import DataFrame
 
     if not main_key_name:
-        data, main_key_name = _cast_main_key_name(data)
+        data, main_key_name = cast_main_key(data)
 
     if not inverse:
         data_frame = DataFrame.from_dict(data, orient="index")
@@ -182,7 +183,7 @@ def dict_to_pandas_data_frame(data, main_key_name=None, order=None, inverse=Fals
 
     if order:
         data_frame[main_key_name] = data_frame.index
-        order = _create_sorted_list_from_order(order)
+        order = create_sorted_list_from_order(order)
         data_frame = data_frame[order]
         data_frame.set_index(order[0], inplace=True)
 

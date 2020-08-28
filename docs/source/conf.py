@@ -12,6 +12,7 @@
 #
 import os
 import sys
+from datesy import __version__
 import sphinx.ext.autodoc
 import sphinx.ext.napoleon
 
@@ -22,11 +23,11 @@ sys.path.insert(0, os.path.abspath("../../datesy"))
 # -- Project information -----------------------------------------------------
 
 project = "datesy"
-copyright = "2019, Jan Lukas Braje"
+copyright = "2020, Jan Lukas Braje"
 author = "Jan Lukas Braje"
 
 # The full version, including alpha/beta/rc tags
-release = "0.8.1"
+release = __version__
 
 
 # -- General configuration ---------------------------------------------------

@@ -1,6 +1,16 @@
 Release Notes
 =============
 
+0.9.0
+*****
+
+* separate package into
+    * datesy (actual data handling)
+    * fil_io (file loading/writing/selection)
+    * querious (SQL query helper)
+    * pythomy (pythonic MySQL interaction)
+
+
 0.8.1
 *****
 

@@ -15,22 +15,45 @@ For using in Python3 script, import it at the beginning of the script:
     pass
 
 
-File interaction
-*********************
+Inspecting data
+***************
 
-Check here all the examples for interacting with files
+Check here all the examples for inspecting data
+(coming soon)
 
 .. toctree::
 
- examples.file_interaction
+ examples.inspect
 
 
 
-Converting Data
+Converting data
 ***************
 
-Check here all the examples for converting data easily with `datesy`
+Check here all the examples for converting data
 
 .. toctree::
 
  examples.convert
+
+
+Matching data
+***************
+
+Check here all the examples for converting data
+(coming soon)
+
+.. toctree::
+
+ examples.matching
+
+
+Sorting data
+***************
+
+Check here all the examples for converting data
+(coming soon)
+
+.. toctree::
+
+ examples.sorting

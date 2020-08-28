@@ -1,8 +1,9 @@
 # static information that is relevant for packet management and documentation
+from datesy import __version__
 project_name = "datesy"
-version = "0.8.1"
-url = "https://github.com/janluak/datesy"
+version = __version__
+url = f"https://github.com/janluak/{project_name}"
 author = "Jan Lukas Braje"
-author_email = "datesy@braje.org"
+author_email = f"{project_name}@braje.org"
 packet_license = "Apache 2.0"
-packet_copyright = "2019, Jan Lukas Braje"
+packet_copyright = "2020, Jan Lukas Braje"

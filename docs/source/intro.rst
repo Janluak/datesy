@@ -4,8 +4,8 @@ Introduction
 
 Making intro to data handling in python nice and easy!
 
-The ``datesy`` package provides easy handling (read/write) of standard file types, the conversion between the file types
-as well as basic data inspection functionalities.
+The ``datesy`` package provides the conversion between the file types
+as well as basic data inspection functions.
 
 It is designed for an easy start into the python world and data handling in it without having to think of unnecessary basics.
 
@@ -15,9 +15,8 @@ Main Usage
 
 Datesy, making DATa handling EaSY, is mostly helpful if you are looking for:
 
-1. loading/dumping data to a standard file format like `json`, `csv`, `xml`, `xls(x)`
-2. inspecting complex data like searching for a path in a dictionary
-3. mapping strings and their properties
+1. inspecting complex data like searching for a path in a dictionary
+2. mapping strings and their properties
 
 
 Motivation

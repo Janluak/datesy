@@ -7,7 +7,6 @@ The easiest installation can be done by `pip3 install datesy`.
 
 ## Getting started
 Once installed, just `import datesy` the package and start using as simple as:
-`data_sheet = datesy.file_IO.xls_file.load_single_sheet(file_name, sheet_name)` &
 `data = datesy.convert.pandas_data_frame_to_dict(data_sheet)` for handling your data as easy as a dictionary
 For further guidance and help look at the documentation:
 
@@ -18,14 +17,12 @@ Please find the documentation here: [documentation](https://datesy.readthedocs.i
 ## Release Notes
 Please find all release notes here: [release notes](https://datesy.readthedocs.io/en/latest/release_notes.html)
 
-### 0.8.0
-* Database abstraction and I/O for mysql included 
-
-### 0.7.0
-* reading file types like csv, json, xml & xls
-* converting data types like lists, dicts, DataFrames
-* string insights: matching algorithms 
-
+### 0.9.0
+ * refactored and separated datesy into 4 repositories:
+    * datesy: converting, inspecting, matching and sorting data
+    * [fil_io](https://github.com/janluak/fil_io): selecting, reading and writing files
+    * [querious](https://github.com/janluak/querious): sql query helper
+    * [pythomy](https://github.com/janluak/pythomy): pythonic mysql interaction
 
 ## Requests & contribution
 If you desire anything changed in the package, need another feature please just create an issue.
